@@ -49,6 +49,7 @@ GEMINI_API_KEY=api_key_gemini_cua_ban
 GEMINI_MODEL=gemini-3.5-flash-lite          # doi neu Google doi ten model free tier
 GEMINI_RPM_LIMIT=10                        # chinh theo han muc free tier hien tai
 LOG_LEVEL=info
+PORT=3000                                  # chi dung khi deploy len nen tang yeu cau health check HTTP
 ```
 
 ## 4. Đăng ký slash command và chạy bot
@@ -115,7 +116,13 @@ Thay vì 1 kênh chung với bot reply kèm bản dịch, có thể chia mỗi n
 
 Lưu ý: `!name` (đăng ký danh sách thành viên) vẫn được kiểm tra trước, nên nếu #general vừa là kênh đăng ký tên vừa là kênh tiếng Anh, gõ `!Tên` vẫn hoạt động bình thường (không bị đồng bộ nhầm sang kênh khác).
 
-## 8. Lưu ý khi mở rộng quy mô (80+ thành viên, tiếp tục tăng)
+## 8. Deploy lên nền tảng hosting (Railway/Render/Vibe Hosting...)
+
+Nhiều nền tảng PaaS yêu cầu ứng dụng lắng nghe 1 cổng HTTP để "health check", kể cả với app không phải web server như bot Discord. Bot đã có sẵn [src/healthServer.js](src/healthServer.js) — tự chạy 1 HTTP server tối thiểu (trả về `200 OK` cho mọi request) trên cổng lấy từ biến môi trường `PORT` (mặc định 3000), chạy song song với việc bot đăng nhập Discord, không cần cấu hình thêm gì ngoài việc nền tảng tự set `PORT` (hầu hết tự làm việc này).
+
+**Lưu ý khi điền biến môi trường trên các nền tảng có nút "AI tự sinh giá trị":** tuyệt đối không dùng tính năng đó cho `DISCORD_TOKEN`, `GEMINI_API_KEY`, `CLIENT_ID`, `GUILD_ID` — AI sẽ sinh ra chuỗi giả ngẫu nhiên (trông giống nhưng không phải giá trị thật), khiến bot lỗi `TokenInvalid` khi khởi động. Luôn dán đúng giá trị thật từ file `.env` cục bộ của bạn vào các ô này.
+
+## 9. Lưu ý khi mở rộng quy mô (80+ thành viên, tiếp tục tăng)
 
 - Cấu hình được lưu trong `data/config.json` — nếu chạy nhiều instance bot cùng lúc (không khuyến khích), cần chuyển sang một DB thực sự (SQLite/Postgres) để tránh ghi đè lẫn nhau.
 - Gói miễn phí Gemini giới hạn theo request/phút **và** request/ngày. Khi cộng đồng đông lên, có thể chạm trần request/ngày trước cả trần/phút — theo dõi lỗi "Đã đạt giới hạn tốc độ/quota" trong log (đặt `LOG_LEVEL=debug` để xem chi tiết) để biết khi nào cần nâng cấp lên gói trả phí (pay-as-you-go) của Gemini API, thường rẻ hơn đáng kể so với Cloud Translation API cho cùng khối lượng.

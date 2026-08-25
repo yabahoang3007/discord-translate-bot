@@ -4,6 +4,7 @@ const logger = require("./logger");
 const { handleMessageCreate } = require("./handlers/messageCreate");
 const { handleInteractionCreate } = require("./handlers/interactionCreate");
 const { handleReactionAdd } = require("./handlers/reactionRelay");
+const { startHealthServer } = require("./healthServer");
 
 const { DISCORD_TOKEN, GEMINI_API_KEY } = process.env;
 
@@ -48,3 +49,4 @@ process.on("SIGTERM", () => {
 });
 
 client.login(DISCORD_TOKEN);
+startHealthServer();
