@@ -126,7 +126,11 @@ Nhiều nền tảng PaaS yêu cầu ứng dụng lắng nghe 1 cổng HTTP đ�
 - `data/config.json` (danh sách ngôn ngữ) và `data/channelLanguages.json` (ánh xạ kênh↔ngôn ngữ) **được commit thẳng vào Git** làm baseline, để mỗi lần deploy lại vẫn giữ đúng cấu hình hiện tại thay vì reset về mặc định. Sau khi đổi ngôn ngữ/kênh bằng lệnh, nhớ chạy lại `git add data/config.json data/channelLanguages.json && git commit && git push` để "chốt" lại baseline mới — nếu không, lần deploy tiếp theo sẽ quay về đúng bản đã commit gần nhất.
 - `data/memberList.json` (danh sách tên đã đăng ký) và `data/userPreferences.json` (ngôn ngữ mỗi người đã mute) **không** được commit vì đây là dữ liệu người dùng thay đổi liên tục — nghĩa là chúng **sẽ bị xóa** mỗi khi có deploy mới. Nếu cần giữ vĩnh viễn, cân nhắc chuyển sang lưu trên 1 volume lưu trữ lâu dài (nếu nền tảng hỗ trợ) hoặc một database ngoài thay vì file JSON.
 
-## 9. Lưu ý khi mở rộng quy mô (80+ thành viên, tiếp tục tăng)
+## 9. Tạo sticker server từ ảnh
+
+`/create-sticker image:<ảnh> name:<tên> tags:<từ khoá, tuỳ chọn>` (yêu cầu quyền **Manage Server**) — bot resize ảnh gửi lên cho vừa giới hạn của Discord (PNG, tối đa 320×320px, tối đa 512KB) rồi thêm thẳng vào danh sách sticker chính thức của server. Test thực tế cho thấy việc này hoạt động ngay cả khi server chưa Boost (Level 0) — không cần nâng cấp gì thêm.
+
+## 10. Lưu ý khi mở rộng quy mô (80+ thành viên, tiếp tục tăng)
 
 - Cấu hình được lưu trong `data/config.json` — nếu chạy nhiều instance bot cùng lúc (không khuyến khích), cần chuyển sang một DB thực sự (SQLite/Postgres) để tránh ghi đè lẫn nhau.
 - Gói miễn phí Gemini giới hạn theo request/phút **và** request/ngày. Khi cộng đồng đông lên, có thể chạm trần request/ngày trước cả trần/phút — theo dõi lỗi "Đã đạt giới hạn tốc độ/quota" trong log (đặt `LOG_LEVEL=debug` để xem chi tiết) để biết khi nào cần nâng cấp lên gói trả phí (pay-as-you-go) của Gemini API, thường rẻ hơn đáng kể so với Cloud Translation API cho cùng khối lượng.

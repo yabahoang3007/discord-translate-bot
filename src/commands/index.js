@@ -5,6 +5,7 @@ const muteLanguage = require("./muteLanguage");
 const memberList = require("./memberList");
 const languageChannels = require("./languageChannels");
 const declareLanguage = require("./declareLanguage");
+const createSticker = require("./createSticker");
 
 const commands = [
   translateLanguages,
@@ -14,6 +15,7 @@ const commands = [
   memberList,
   languageChannels,
   declareLanguage,
+  createSticker,
 ];
 
 module.exports = { commands };
