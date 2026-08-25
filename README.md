@@ -118,6 +118,8 @@ Thay vì 1 kênh chung với bot reply kèm bản dịch, có thể chia mỗi n
 
 **Đồng bộ ảnh/GIF/video đính kèm:** file người dùng tải lên trực tiếp (ảnh, GIF, video, hay bất kỳ file nào) cũng được đính kèm y hệt sang các kênh còn lại. Riêng GIF chọn từ khung GIF có sẵn của Discord (Tenor) không phải file đính kèm — bản chất chỉ là 1 link trong nội dung tin nhắn, nên đã tự động được giữ nguyên và đồng bộ như một link bình thường (Discord tự hiện preview ở mọi kênh).
 
+**Đồng bộ trả lời (reply):** khi ai đó dùng tính năng "Reply" của Discord để trả lời 1 tin nhắn, các kênh còn lại sẽ hiện thêm 1 dòng trích dẫn phía trên nội dung, dạng `> 💬 Tên người gửi: <đoạn trích tin nhắn được trả lời>`. Nếu tin nhắn được trả lời đó cũng từng được đồng bộ trước đó, đoạn trích sẽ lấy đúng **bản đã dịch sang ngôn ngữ của từng kênh** thay vì hiện nguyên văn ngoại ngữ gốc. Đây cũng là giới hạn từ Discord — webhook không thể tạo reply thật (liên kết nhảy đến tin nhắn gốc) như tin nhắn thường.
+
 Lưu ý: `!name` (đăng ký danh sách thành viên) vẫn được kiểm tra trước, nên nếu #general vừa là kênh đăng ký tên vừa là kênh tiếng Anh, gõ `!Tên` vẫn hoạt động bình thường (không bị đồng bộ nhầm sang kênh khác).
 
 ## 8. Deploy lên nền tảng hosting (Railway/Render/Vibe Hosting...)

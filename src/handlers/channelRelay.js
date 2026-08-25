@@ -27,6 +27,49 @@ async function downloadStickerFiles(stickers) {
   return files;
 }
 
+const QUOTE_MAX_LENGTH = 100;
+
+function truncateQuote(text) {
+  const singleLine = text.replace(/\s+/g, " ").trim();
+  return singleLine.length > QUOTE_MAX_LENGTH ? `${singleLine.slice(0, QUOTE_MAX_LENGTH - 3)}...` : singleLine;
+}
+
+// Discord KHONG cho phep webhook tao reply that (field message_reference bi lang le bo qua),
+// nen ta hien thi phan trich dan tin nhan duoc tra loi bang text ngay tren noi dung chinh.
+// Neu tin nhan duoc tra loi cung tung duoc dong bo (con trong relayLinks), dung dung ban da
+// DICH sang ngon ngu cua tung kenh dich thay vi hien nguyen van ngoai ngu goc.
+async function resolveReplyContext(message) {
+  if (!message.reference?.messageId) return null;
+  try {
+    const repliedTo = await message.fetchReference();
+    return {
+      authorName: repliedTo.member?.displayName || repliedTo.author.username,
+      originalContent: repliedTo.content || "[tệp đính kèm/sticker]",
+      group: relayLinks.getGroup(repliedTo.id),
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function buildReplyPrefix(replyContext, targetChannelId, client) {
+  if (!replyContext) return "";
+
+  let quoteText = replyContext.originalContent;
+  const matched = replyContext.group?.find((g) => g.channelId === targetChannelId);
+  if (matched) {
+    try {
+      const targetChannel = await client.channels.fetch(targetChannelId);
+      const translatedCopy = await targetChannel.messages.fetch(matched.messageId);
+      if (translatedCopy.content) quoteText = translatedCopy.content;
+    } catch {
+      // giu nguyen quoteText mac dinh (chua dich) neu khong lay duoc ban da dich
+    }
+  }
+
+  return `> 💬 **${replyContext.authorName}**: ${truncateQuote(quoteText)}\n`;
+}
+
 // Tra ve true neu kenh nay la kenh-theo-ngon-ngu (da xu ly, bat ke thanh cong hay khong),
 // de messageCreate.js biet ma bo qua luong dich kieu reply-embed cu cho kenh nay.
 async function tryHandleChannelRelay(message) {
@@ -79,6 +122,7 @@ async function tryHandleChannelRelay(message) {
   const displayName = message.member?.displayName || message.author.username;
   const avatarURL = message.author.displayAvatarURL();
   const client = message.client;
+  const replyContext = await resolveReplyContext(message);
 
   const group = [{ channelId: message.channel.id, messageId: message.id }];
 
@@ -89,10 +133,13 @@ async function tryHandleChannelRelay(message) {
       const text = translatedByCode ? translatedByCode[mapping.code] : hasRawContent ? rawContent : undefined;
       if (!text && mediaFiles.length === 0) return null;
 
+      const replyPrefix = await buildReplyPrefix(replyContext, mapping.channelId, client);
+      const content = replyPrefix ? `${replyPrefix}${text || ""}`.trim() : text;
+
       const targetChannel = await client.channels.fetch(mapping.channelId);
       const webhook = await getOrCreateWebhook(targetChannel, client);
       const sent = await webhook.send({
-        content: text || undefined,
+        content: content || undefined,
         files: mediaFiles.length ? mediaFiles : undefined,
         username: displayName,
         avatarURL,
