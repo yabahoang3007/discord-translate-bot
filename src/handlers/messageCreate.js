@@ -6,6 +6,7 @@ const gemini = require("../services/geminiTranslate");
 const { extractTranslatable, restorePlaceholders, isTranslatable } = require("../services/textSanitizer");
 const { describeLanguage } = require("../services/languageCatalog");
 const { tryHandleMemberRegistration } = require("./memberListHandler");
+const { tryHandleChannelRelay } = require("./channelRelay");
 
 const EMBED_COLOR = 0x5865f2;
 
@@ -18,6 +19,7 @@ async function handleMessageCreate(message) {
     if (message.author.bot || message.webhookId || !message.guild) return;
 
     if (await tryHandleMemberRegistration(message)) return;
+    if (await tryHandleChannelRelay(message)) return;
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) return;

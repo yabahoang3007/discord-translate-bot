@@ -94,7 +94,24 @@ Bot có thể tổng hợp tên thành viên thành một danh sách tự cập 
 - Muốn bot tự ghim tin nhắn danh sách, bật thêm quyền **"Manage Messages"** cho vai trò của bot (không bắt buộc — thiếu quyền này thì danh sách vẫn cập nhật bình thường, chỉ là không được ghim).
 - `/member-list reset` (admin) — xóa toàn bộ danh sách đã đăng ký để làm lại từ đầu.
 
-## 7. Lưu ý khi mở rộng quy mô (80+ thành viên, tiếp tục tăng)
+## 7. Kênh riêng theo ngôn ngữ (đồng bộ tin nhắn đa kênh)
+
+Thay vì 1 kênh chung với bot reply kèm bản dịch, có thể chia mỗi ngôn ngữ ra 1 kênh riêng — thành viên chat trong kênh ngôn ngữ của họ, bot tự đồng bộ (dịch + đăng lại) tin nhắn sang các kênh còn lại, giả làm chính người gửi (webhook, đúng tên + avatar) để trải nghiệm tự nhiên như đang chat trực tiếp ở mọi kênh.
+
+**Yêu cầu quyền trước khi dùng:** vào **Server Settings → Roles → (vai trò của bot)**, bật thêm:
+- **"Manage Channels"** — để bot tự tạo kênh mới cho từng ngôn ngữ.
+- **"Manage Webhooks"** — để bot tạo/gửi tin nhắn qua webhook ở mỗi kênh.
+
+**Thiết lập (admin, 1 lần):**
+- `/language-channels setup` — với mỗi ngôn ngữ đang cấu hình (`/translate-languages list`), bot tạo kênh `#chat-<mã ngôn ngữ>` (ví dụ `#chat-vi`, `#chat-ko`) nếu chưa có, riêng ngôn ngữ `en` sẽ dùng luôn kênh **#general** có sẵn thay vì tạo kênh mới.
+- `/language-channels list` — xem kênh nào đang ứng với ngôn ngữ nào.
+- `/language-channels reset` — xóa ánh xạ (không xóa kênh đã tạo), dừng đồng bộ.
+
+**Cách hoạt động:** thành viên nhắn trong kênh ngôn ngữ của họ (ví dụ #chat-ja) → bot dịch sang ngôn ngữ của từng kênh còn lại → đăng bản dịch vào từng kênh đó qua webhook mang đúng tên/avatar người gửi gốc. Các kênh đã ánh xạ **không còn dùng kiểu reply-kèm-embed** của mục Cách hoạt động ở trên nữa — đây là 2 chế độ tách biệt, một tin nhắn chỉ đi theo 1 trong 2 chế độ tùy kênh nó thuộc về.
+
+Lưu ý: `!name` (đăng ký danh sách thành viên) vẫn được kiểm tra trước, nên nếu #general vừa là kênh đăng ký tên vừa là kênh tiếng Anh, gõ `!Tên` vẫn hoạt động bình thường (không bị đồng bộ nhầm sang kênh khác).
+
+## 8. Lưu ý khi mở rộng quy mô (80+ thành viên, tiếp tục tăng)
 
 - Cấu hình được lưu trong `data/config.json` — nếu chạy nhiều instance bot cùng lúc (không khuyến khích), cần chuyển sang một DB thực sự (SQLite/Postgres) để tránh ghi đè lẫn nhau.
 - Gói miễn phí Gemini giới hạn theo request/phút **và** request/ngày. Khi cộng đồng đông lên, có thể chạm trần request/ngày trước cả trần/phút — theo dõi lỗi "Đã đạt giới hạn tốc độ/quota" trong log (đặt `LOG_LEVEL=debug` để xem chi tiết) để biết khi nào cần nâng cấp lên gói trả phí (pay-as-you-go) của Gemini API, thường rẻ hơn đáng kể so với Cloud Translation API cho cùng khối lượng.
