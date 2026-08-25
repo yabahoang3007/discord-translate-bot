@@ -114,6 +114,8 @@ Thay vì 1 kênh chung với bot reply kèm bản dịch, có thể chia mỗi n
 
 **Đồng bộ reaction:** khi ai đó thả emoji vào 1 bản tin nhắn (ở bất kỳ kênh nào trong nhóm đã đồng bộ), bot tự thả **cùng emoji đó** vào tất cả các bản sao còn lại (tin nhắn gốc + mọi kênh khác). Chỉ áp dụng cho tin nhắn được đồng bộ trong 24 giờ gần nhất (sau đó bộ nhớ liên kết tự dọn để tránh phình to theo thời gian).
 
+**Đồng bộ sticker:** khi ai đó gửi sticker (kèm chữ hoặc không), bot tải ảnh của sticker đó về và gửi lại dưới dạng **ảnh đính kèm** ở các kênh còn lại (giữ đúng tên/avatar người gửi). Đây là giới hạn từ phía Discord — webhook (cách bot dùng để giả làm người gửi) không được phép gửi sticker thật, chỉ có bot/tài khoản người dùng gửi trực tiếp mới làm được. Riêng sticker động cao cấp (định dạng Lottie) không chuyển được thành ảnh nên sẽ bị bỏ qua.
+
 Lưu ý: `!name` (đăng ký danh sách thành viên) vẫn được kiểm tra trước, nên nếu #general vừa là kênh đăng ký tên vừa là kênh tiếng Anh, gõ `!Tên` vẫn hoạt động bình thường (không bị đồng bộ nhầm sang kênh khác).
 
 ## 8. Deploy lên nền tảng hosting (Railway/Render/Vibe Hosting...)
