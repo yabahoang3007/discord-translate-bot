@@ -1,6 +1,7 @@
 const { EmbedBuilder } = require("discord.js");
 const logger = require("../logger");
 const memberListStore = require("../config/memberList");
+const channelLanguages = require("../config/channelLanguages");
 
 const EMBED_COLOR = 0x5865f2;
 const NAME_PATTERN = /^!(.+)/s;
@@ -33,7 +34,7 @@ async function tryHandleMemberRegistration(message) {
   }
 
   try {
-    await updateMemberListMessage(message.channel, entries);
+    await updateMemberListEverywhere(message.client, entries);
   } catch (error) {
     logger.error("Không cập nhật được tin nhắn danh sách thành viên:", error);
   }
@@ -41,23 +42,26 @@ async function tryHandleMemberRegistration(message) {
   return true;
 }
 
-async function updateMemberListMessage(channel, entries) {
+function buildEmbed(entries) {
   const lines = entries.length
     ? entries.map((e, i) => `${i + 1}. ${e.name} — <@${e.userId}>`).join("\n")
     : "_Chưa có ai đăng ký._";
 
-  const embed = new EmbedBuilder()
+  return new EmbedBuilder()
     .setColor(EMBED_COLOR)
     .setTitle("📋 Danh Sách Thành Viên Đã Đăng Ký")
     .setDescription(lines.length > 4000 ? `${lines.slice(0, 3997)}...` : lines)
     .setFooter({ text: `${entries.length} thành viên · Gõ !ten-cua-ban để đăng ký hoặc cập nhật tên` })
     .setTimestamp();
+}
 
-  const config = memberListStore.getConfig();
+async function updateMemberListMessage(channel, entries) {
+  const embed = buildEmbed(entries);
+  const existingId = memberListStore.getMessageIdForChannel(channel.id);
 
-  if (config.messageId) {
+  if (existingId) {
     try {
-      const existing = await channel.messages.fetch(config.messageId);
+      const existing = await channel.messages.fetch(existingId);
       await existing.edit({ embeds: [embed] });
       return;
     } catch {
@@ -66,8 +70,23 @@ async function updateMemberListMessage(channel, entries) {
   }
 
   const posted = await channel.send({ embeds: [embed] });
-  memberListStore.setMessageId(posted.id);
+  memberListStore.setMessageIdForChannel(channel.id, posted.id);
   await posted.pin().catch(() => {}); // best-effort, can quyen Manage Messages
 }
 
-module.exports = { tryHandleMemberRegistration, updateMemberListMessage };
+// Dang/cap nhat danh sach o kenh dang ky (thuong la #general) VA moi kenh trong he thong
+// dong bo da ngon ngu, de ai o kenh nao cung xem duoc danh sach thanh vien.
+async function updateMemberListEverywhere(client, entries) {
+  const config = memberListStore.getConfig();
+  const channelIds = new Set(channelLanguages.getMappings().map((m) => m.channelId));
+  if (config.channelId) channelIds.add(config.channelId);
+
+  await Promise.allSettled(
+    [...channelIds].map(async (channelId) => {
+      const channel = await client.channels.fetch(channelId);
+      await updateMemberListMessage(channel, entries);
+    })
+  );
+}
+
+module.exports = { tryHandleMemberRegistration, updateMemberListMessage, updateMemberListEverywhere };

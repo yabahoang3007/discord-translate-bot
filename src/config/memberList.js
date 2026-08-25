@@ -3,7 +3,7 @@ const path = require("path");
 
 const FILE_PATH = path.join(__dirname, "..", "..", "data", "memberList.json");
 
-const DEFAULTS = { channelId: null, messageId: null, entries: [] };
+const DEFAULTS = { channelId: null, messageIds: {}, entries: [] };
 
 function load() {
   if (!fs.existsSync(FILE_PATH)) {
@@ -11,7 +11,9 @@ function load() {
     fs.writeFileSync(FILE_PATH, JSON.stringify(DEFAULTS, null, 2), "utf8");
   }
 
-  return JSON.parse(fs.readFileSync(FILE_PATH, "utf8"));
+  const config = JSON.parse(fs.readFileSync(FILE_PATH, "utf8"));
+  if (!config.messageIds) config.messageIds = {}; // tuong thich nguoc voi file cu chi co 1 messageId
+  return config;
 }
 
 function save(next) {
@@ -27,13 +29,16 @@ function getConfig() {
 function setChannel(channelId) {
   const config = load();
   config.channelId = channelId;
-  config.messageId = null; // kenh moi -> can tao lai tin nhan tong hop
   save(config);
 }
 
-function setMessageId(messageId) {
+function getMessageIdForChannel(channelId) {
+  return load().messageIds[channelId] || null;
+}
+
+function setMessageIdForChannel(channelId, messageId) {
   const config = load();
-  config.messageId = messageId;
+  config.messageIds[channelId] = messageId;
   save(config);
 }
 
@@ -54,8 +59,15 @@ function upsertEntry(userId, name) {
 function reset() {
   const config = load();
   config.entries = [];
-  config.messageId = null;
+  config.messageIds = {};
   save(config);
 }
 
-module.exports = { getConfig, setChannel, setMessageId, upsertEntry, reset };
+module.exports = {
+  getConfig,
+  setChannel,
+  getMessageIdForChannel,
+  setMessageIdForChannel,
+  upsertEntry,
+  reset,
+};

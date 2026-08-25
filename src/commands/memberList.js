@@ -1,6 +1,6 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
 const memberListStore = require("../config/memberList");
-const { updateMemberListMessage } = require("../handlers/memberListHandler");
+const { updateMemberListEverywhere } = require("../handlers/memberListHandler");
 
 const data = new SlashCommandBuilder()
   .setName("member-list")
@@ -16,11 +16,11 @@ async function execute(interaction) {
 
   if (subcommand === "setchannel") {
     memberListStore.setChannel(interaction.channelId);
-    await updateMemberListMessage(interaction.channel, memberListStore.getConfig().entries);
-    await interaction.reply({
-      content: `Đã đặt kênh này làm nơi đăng ký. Thành viên chỉ cần gõ \`!Tên của họ\` để tham gia danh sách.`,
-      ephemeral: true,
-    });
+    await interaction.deferReply({ ephemeral: true });
+    await updateMemberListEverywhere(interaction.client, memberListStore.getConfig().entries);
+    await interaction.editReply(
+      "Đã đặt kênh này làm nơi đăng ký. Thành viên chỉ cần gõ `!Tên của họ` để tham gia danh sách — danh sách sẽ hiện ở kênh này và mọi kênh trong hệ thống đồng bộ đa ngôn ngữ."
+    );
     return;
   }
 
