@@ -21,11 +21,12 @@ async function tryHandleChannelRelay(message) {
   const otherMappings = mappings.filter((m) => m.channelId !== message.channel.id);
   if (otherMappings.length === 0) return true;
 
+  const sourceLangInfo = describeLanguage(current.code);
   const targetLanguages = otherMappings.map((m) => describeLanguage(m.code));
 
-  let result;
+  let translations;
   try {
-    result = await gemini.translateMessage(cleanText, targetLanguages, apiKey);
+    translations = await gemini.translateForRelay(cleanText, sourceLangInfo.name, targetLanguages, apiKey);
   } catch (error) {
     logger.warn("Đồng bộ kênh thất bại (lỗi dịch):", error.message || error);
     return true;
@@ -36,7 +37,7 @@ async function tryHandleChannelRelay(message) {
   const client = message.client;
 
   for (const mapping of otherMappings) {
-    const text = result.translations?.[mapping.code];
+    const text = translations?.[mapping.code];
     if (!text) continue;
 
     try {

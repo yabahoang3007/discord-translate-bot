@@ -49,20 +49,31 @@ function buildResponseSchema(languages) {
   };
 }
 
-async function callGemini(cleanText, languages, apiKey) {
+function buildRelaySystemPrompt(sourceLangName, languages) {
+  const list = languages.map((lang) => `${lang.code} (${lang.name})`).join(", ");
+  return [
+    "Bạn là công cụ dịch thuật cho một hệ thống cầu nối chat đa kênh trên Discord — mỗi kênh ứng với 1 ngôn ngữ.",
+    `Đoạn văn bản này đến từ kênh ngôn ngữ "${sourceLangName}" — coi đây LUÔN LUÔN là ngôn ngữ nguồn, bất kể nội dung thực tế trông giống ngôn ngữ nào.`,
+    `Dịch nó sang TỪNG ngôn ngữ đích sau, PHẢI điền đủ tất cả, không được bỏ trống bất kỳ ngôn ngữ nào: ${list}.`,
+    "Ngay cả khi văn bản gốc tình cờ trùng hoặc lẫn từ ngữ của một trong các ngôn ngữ đích, vẫn phải dịch/chuyển thể đầy đủ sang đúng ngôn ngữ đó.",
+    "Ưu tiên chính xác ngữ cảnh và thuật ngữ hơn là dịch từng từ theo nghĩa đen; giữ đúng giọng văn, sắc thái của bản gốc.",
+    "Các chuỗi dạng ⟦P0⟧, ⟦P1⟧... là placeholder — giữ nguyên y hệt, không dịch, không đổi thứ tự hay khoảng trắng quanh chúng.",
+    "Chỉ trả lời đúng theo JSON schema đã cho, không thêm giải thích, không thêm markdown.",
+  ].join("\n");
+}
+
+function buildRelaySchema(languages) {
+  const properties = {};
+  for (const lang of languages) {
+    properties[lang.code] = { type: "STRING", description: `Bản dịch sang ${lang.name} (${lang.code})` };
+  }
+  return { type: "OBJECT", properties, required: languages.map((lang) => lang.code) };
+}
+
+async function callGeminiRaw(body, apiKey) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${encodeURIComponent(
     apiKey
   )}`;
-
-  const body = {
-    system_instruction: { parts: [{ text: buildSystemPrompt(languages) }] },
-    contents: [{ role: "user", parts: [{ text: cleanText }] }],
-    generationConfig: {
-      temperature: 0.2,
-      responseMimeType: "application/json",
-      responseSchema: buildResponseSchema(languages),
-    },
-  };
 
   let lastError;
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt += 1) {
@@ -101,6 +112,19 @@ async function callGemini(cleanText, languages, apiKey) {
   throw lastError;
 }
 
+function extractJson(raw) {
+  const text = raw?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!text) {
+    const blockReason = raw?.promptFeedback?.blockReason;
+    throw new Error(blockReason ? `Gemini từ chối phản hồi: ${blockReason}` : "Phản hồi từ Gemini rỗng.");
+  }
+  try {
+    return JSON.parse(text);
+  } catch (parseError) {
+    throw new Error(`Không parse được JSON từ Gemini: ${parseError.message}`);
+  }
+}
+
 /**
  * Phat hien ngon ngu goc + dich sang tat ca ngon ngu dich trong 1 lan goi API.
  * @returns {Promise<{ detectedLanguage: string, translations: Record<string, string> }>}
@@ -110,20 +134,18 @@ async function translateMessage(cleanText, languages, apiKey) {
   const cached = translationCache.get(cacheKey);
   if (cached) return cached;
 
-  const raw = await rateLimiter.schedule(() => callGemini(cleanText, languages, apiKey));
+  const body = {
+    system_instruction: { parts: [{ text: buildSystemPrompt(languages) }] },
+    contents: [{ role: "user", parts: [{ text: cleanText }] }],
+    generationConfig: {
+      temperature: 0.2,
+      responseMimeType: "application/json",
+      responseSchema: buildResponseSchema(languages),
+    },
+  };
 
-  const text = raw?.candidates?.[0]?.content?.parts?.[0]?.text;
-  if (!text) {
-    const blockReason = raw?.promptFeedback?.blockReason;
-    throw new Error(blockReason ? `Gemini từ chối phản hồi: ${blockReason}` : "Phản hồi từ Gemini rỗng.");
-  }
-
-  let parsed;
-  try {
-    parsed = JSON.parse(text);
-  } catch (parseError) {
-    throw new Error(`Không parse được JSON từ Gemini: ${parseError.message}`);
-  }
+  const raw = await rateLimiter.schedule(() => callGeminiRaw(body, apiKey));
+  const parsed = extractJson(raw);
 
   if (!parsed.detectedLanguage || typeof parsed.translations !== "object") {
     throw new Error("JSON trả về từ Gemini thiếu trường bắt buộc.");
@@ -133,8 +155,36 @@ async function translateMessage(cleanText, languages, apiKey) {
   return parsed;
 }
 
+/**
+ * Dich cho he thong cau noi da kenh: ngon ngu nguon la CO DINH theo kenh (khong tu
+ * detect), va LUON dich du sang moi ngon ngu dich duoc liet ke, khong bao gio bo qua
+ * du noi dung thuc te trung voi ngon ngu dich nao.
+ * @returns {Promise<Record<string, string>>}
+ */
+async function translateForRelay(cleanText, sourceLangName, languages, apiKey) {
+  const cacheKey = `relay:${sourceLangName}::${languages.map((l) => l.code).sort().join(",")}::${cleanText}`;
+  const cached = translationCache.get(cacheKey);
+  if (cached) return cached;
+
+  const body = {
+    system_instruction: { parts: [{ text: buildRelaySystemPrompt(sourceLangName, languages) }] },
+    contents: [{ role: "user", parts: [{ text: cleanText }] }],
+    generationConfig: {
+      temperature: 0.2,
+      responseMimeType: "application/json",
+      responseSchema: buildRelaySchema(languages),
+    },
+  };
+
+  const raw = await rateLimiter.schedule(() => callGeminiRaw(body, apiKey));
+  const parsed = extractJson(raw);
+
+  translationCache.set(cacheKey, parsed);
+  return parsed;
+}
+
 function getCacheStats() {
   return { translationCacheSize: translationCache.size };
 }
 
-module.exports = { translateMessage, getCacheStats };
+module.exports = { translateMessage, translateForRelay, getCacheStats };
