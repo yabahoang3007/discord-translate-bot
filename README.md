@@ -47,7 +47,7 @@ CLIENT_ID=application_id_cua_bot
 GUILD_ID=id_server_de_dang_ky_lenh_nhanh   # có thể để trống
 GEMINI_API_KEY=api_key_gemini_cua_ban
 GEMINI_MODEL=gemini-3.5-flash-lite          # doi neu Google doi ten model free tier
-GEMINI_RPM_LIMIT=10                        # chinh theo han muc free tier hien tai
+GEMINI_RPM_LIMIT=15                        # chinh theo han muc free tier hien tai
 LOG_LEVEL=info
 PORT=3000                                  # chi dung khi deploy len nen tang yeu cau health check HTTP
 ```
@@ -136,6 +136,7 @@ Nhiều nền tảng PaaS yêu cầu ứng dụng lắng nghe 1 cổng HTTP đ�
 
 ## 10. Lưu ý khi mở rộng quy mô (80+ thành viên, tiếp tục tăng)
 
+- **Độ trễ khi nhiều người dùng cùng lúc:** hệ thống kênh đa ngôn ngữ (mục 7) gửi bản dịch sang tất cả kênh còn lại **song song** (không tuần tự), nên độ trễ không tăng theo số lượng kênh. Độ trễ còn lại chủ yếu đến từ bản thân việc gọi Gemini API (~1-1.5 giây/tin nhắn với `gemini-3.5-flash-lite`) và hàng đợi giới hạn tốc độ (`GEMINI_RPM_LIMIT`) khi có nhiều tin nhắn dồn cùng lúc. Nếu hàng đợi bị đầy, hệ thống kênh đa ngôn ngữ vẫn **chuyển tiếp nguyên văn tin nhắn (không dịch)** thay vì làm rớt hoàn toàn — riêng chế độ reply-embed cũ (kênh không thuộc hệ thống đa ngôn ngữ) sẽ không phản hồi gì nếu bị rớt.
 - Cấu hình được lưu trong `data/config.json` — nếu chạy nhiều instance bot cùng lúc (không khuyến khích), cần chuyển sang một DB thực sự (SQLite/Postgres) để tránh ghi đè lẫn nhau.
 - Gói miễn phí Gemini giới hạn theo request/phút **và** request/ngày. Khi cộng đồng đông lên, có thể chạm trần request/ngày trước cả trần/phút — theo dõi lỗi "Đã đạt giới hạn tốc độ/quota" trong log (đặt `LOG_LEVEL=debug` để xem chi tiết) để biết khi nào cần nâng cấp lên gói trả phí (pay-as-you-go) của Gemini API, thường rẻ hơn đáng kể so với Cloud Translation API cho cùng khối lượng.
 - Nếu muốn đổi provider dịch khác sau này (DeepL, Claude, hay Gemini bản trả phí), chỉ cần thay [src/services/geminiTranslate.js](src/services/geminiTranslate.js) — phần còn lại của bot chỉ gọi một hàm duy nhất `translateMessage(cleanText, languages, apiKey)`.

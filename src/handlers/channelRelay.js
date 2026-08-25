@@ -79,11 +79,13 @@ async function tryHandleChannelRelay(message) {
 
   const group = [{ channelId: message.channel.id, messageId: message.id }];
 
-  for (const mapping of otherMappings) {
-    const text = translatedByCode ? translatedByCode[mapping.code] : hasRawContent ? rawContent : undefined;
-    if (!text && mediaFiles.length === 0) continue;
+  // Gui song song sang tat ca kenh con lai thay vi tuan tu - voi 6-7 kenh, gui tuan tu
+  // moi kenh ~200-500ms se cong don thanh vai giay tre khong can thiet.
+  const sendResults = await Promise.allSettled(
+    otherMappings.map(async (mapping) => {
+      const text = translatedByCode ? translatedByCode[mapping.code] : hasRawContent ? rawContent : undefined;
+      if (!text && mediaFiles.length === 0) return null;
 
-    try {
       const targetChannel = await client.channels.fetch(mapping.channelId);
       const webhook = await getOrCreateWebhook(targetChannel, client);
       const sent = await webhook.send({
@@ -92,9 +94,15 @@ async function tryHandleChannelRelay(message) {
         username: displayName,
         avatarURL,
       });
-      group.push({ channelId: mapping.channelId, messageId: sent.id });
-    } catch (error) {
-      logger.error(`Không gửi được tin nhắn đồng bộ sang kênh ${mapping.channelId}:`, error.message);
+      return { channelId: mapping.channelId, messageId: sent.id };
+    })
+  );
+
+  for (const [index, result] of sendResults.entries()) {
+    if (result.status === "fulfilled" && result.value) {
+      group.push(result.value);
+    } else if (result.status === "rejected") {
+      logger.error(`Không gửi được tin nhắn đồng bộ sang kênh ${otherMappings[index].channelId}:`, result.reason?.message);
     }
   }
 

@@ -7,7 +7,7 @@ const MAX_RETRIES = 2;
 const RETRYABLE_STATUS = new Set([500, 502, 503, 504]); // KHONG retry 429: tra ve ngay de khong pha them quota mien phi
 
 const translationCache = new TtlCache(60 * 60 * 1000); // 1 gio
-const rateLimiter = new RateLimiter(Number(process.env.GEMINI_RPM_LIMIT) || 10);
+const rateLimiter = new RateLimiter(Number(process.env.GEMINI_RPM_LIMIT) || 15);
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
