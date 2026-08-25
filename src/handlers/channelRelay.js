@@ -55,7 +55,10 @@ async function tryHandleChannelRelay(message) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (apiKey) {
       const sourceLangInfo = describeLanguage(current.code);
-      const targetLanguages = otherMappings.map((m) => describeLanguage(m.code));
+      // Dung DU danh sach ngon ngu (khong chi "cac kenh con lai") de moi tin nhan trong
+      // cung 1 batch (xem geminiTranslate.js) dung chung 1 bo ngon ngu dich, bat ke tin
+      // nhan do den tu kenh nao - dieu kien can de gop nhieu tin nhan vao 1 request.
+      const targetLanguages = mappings.map((m) => describeLanguage(m.code));
       try {
         const translations = await gemini.translateForRelay(cleanText, sourceLangInfo.name, targetLanguages, apiKey);
         translatedByCode = {};

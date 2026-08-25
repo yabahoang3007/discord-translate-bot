@@ -49,25 +49,101 @@ function buildResponseSchema(languages) {
   };
 }
 
-function buildRelaySystemPrompt(sourceLangName, languages) {
+// Batching: khi nhieu tin nhan (tu nhieu kenh/nguoi khac nhau) den gan nhau, gop chung
+// vao 1 lan goi Gemini duy nhat thay vi moi tin nhan 1 request rieng. Voi cong dong dong
+// nguoi (vd 80 thanh vien chat cung luc), day la cach tang suc chiu tai thuc su thay vi
+// chi tang RPM_LIMIT - so luong request/phut khong doi nhung moi request xu ly duoc nhieu
+// tin nhan hon. Cac tin nhan trong 1 batch hoan toan doc lap, khong lien quan ngu canh.
+const BATCH_WINDOW_MS = 300;
+const MAX_BATCH_SIZE = 20;
+
+let pendingBatch = [];
+let batchTimer = null;
+
+function buildBatchSystemPrompt(languages) {
   const list = languages.map((lang) => `${lang.code} (${lang.name})`).join(", ");
   return [
-    "Bạn là công cụ dịch thuật cho một hệ thống cầu nối chat đa kênh trên Discord — mỗi kênh ứng với 1 ngôn ngữ.",
-    `Đoạn văn bản này đến từ kênh ngôn ngữ "${sourceLangName}" — coi đây LUÔN LUÔN là ngôn ngữ nguồn, bất kể nội dung thực tế trông giống ngôn ngữ nào.`,
-    `Dịch nó sang TỪNG ngôn ngữ đích sau, PHẢI điền đủ tất cả, không được bỏ trống bất kỳ ngôn ngữ nào: ${list}.`,
-    "Ngay cả khi văn bản gốc tình cờ trùng hoặc lẫn từ ngữ của một trong các ngôn ngữ đích, vẫn phải dịch/chuyển thể đầy đủ sang đúng ngôn ngữ đó.",
-    "Ưu tiên chính xác ngữ cảnh và thuật ngữ hơn là dịch từng từ theo nghĩa đen; giữ đúng giọng văn, sắc thái của bản gốc.",
+    "Bạn là công cụ dịch thuật cho một hệ thống cầu nối chat đa kênh trên Discord, xử lý NHIỀU tin nhắn độc lập trong cùng 1 lượt.",
+    `Đầu vào là một mảng JSON các tin nhắn, mỗi tin nhắn có "id" và "sourceLanguage" (ngôn ngữ nguồn CỐ ĐỊNH theo kênh gốc, bất kể nội dung thực tế trông giống ngôn ngữ nào) và "text".`,
+    `Với MỖI tin nhắn, dịch "text" sang TẤT CẢ các ngôn ngữ sau, PHẢI điền đủ từng ngôn ngữ, không bỏ sót: ${list}.`,
+    "Các tin nhắn hoàn toàn độc lập với nhau — tuyệt đối không trộn lẫn ngữ cảnh hay nội dung giữa các tin nhắn khác nhau khi dịch.",
+    "Ưu tiên chính xác ngữ cảnh và thuật ngữ hơn là dịch từng từ theo nghĩa đen; giữ đúng giọng văn, sắc thái của từng bản gốc.",
     "Các chuỗi dạng ⟦P0⟧, ⟦P1⟧... là placeholder — giữ nguyên y hệt, không dịch, không đổi thứ tự hay khoảng trắng quanh chúng.",
-    "Chỉ trả lời đúng theo JSON schema đã cho, không thêm giải thích, không thêm markdown.",
+    "Trả về đúng theo JSON schema đã cho: một mảng kết quả, mỗi phần tử gồm đúng \"id\" tương ứng và \"translations\". Không thêm giải thích, không thêm markdown.",
   ].join("\n");
 }
 
-function buildRelaySchema(languages) {
+function buildBatchSchema(languages) {
   const properties = {};
   for (const lang of languages) {
     properties[lang.code] = { type: "STRING", description: `Bản dịch sang ${lang.name} (${lang.code})` };
   }
-  return { type: "OBJECT", properties, required: languages.map((lang) => lang.code) };
+  return {
+    type: "ARRAY",
+    items: {
+      type: "OBJECT",
+      properties: {
+        id: { type: "INTEGER", description: "Trùng khớp với id của tin nhắn đầu vào" },
+        translations: { type: "OBJECT", properties, required: languages.map((lang) => lang.code) },
+      },
+      required: ["id", "translations"],
+    },
+  };
+}
+
+let nextBatchId = 1;
+
+function scheduleFlush() {
+  if (batchTimer) return;
+  batchTimer = setTimeout(flushBatch, BATCH_WINDOW_MS);
+}
+
+async function flushBatch() {
+  const batch = pendingBatch;
+  pendingBatch = [];
+  batchTimer = null;
+  if (batch.length === 0) return;
+
+  const { languages, apiKey } = batch[0];
+
+  const body = {
+    system_instruction: { parts: [{ text: buildBatchSystemPrompt(languages) }] },
+    contents: [
+      {
+        role: "user",
+        parts: [
+          {
+            text: JSON.stringify(
+              batch.map((item) => ({ id: item.id, sourceLanguage: item.sourceLangName, text: item.cleanText }))
+            ),
+          },
+        ],
+      },
+    ],
+    generationConfig: {
+      temperature: 0.2,
+      responseMimeType: "application/json",
+      responseSchema: buildBatchSchema(languages),
+    },
+  };
+
+  try {
+    const raw = await rateLimiter.schedule(() => callGeminiRaw(body, apiKey));
+    const parsed = extractJson(raw);
+    const byId = new Map(parsed.map((entry) => [entry.id, entry.translations]));
+
+    for (const item of batch) {
+      const translations = byId.get(item.id);
+      if (translations) {
+        translationCache.set(item.cacheKey, translations);
+        item.resolve(translations);
+      } else {
+        item.reject(new Error("Gemini không trả về kết quả cho tin nhắn này trong batch."));
+      }
+    }
+  } catch (error) {
+    for (const item of batch) item.reject(error);
+  }
 }
 
 async function callGeminiRaw(body, apiKey) {
@@ -159,28 +235,39 @@ async function translateMessage(cleanText, languages, apiKey) {
  * Dich cho he thong cau noi da kenh: ngon ngu nguon la CO DINH theo kenh (khong tu
  * detect), va LUON dich du sang moi ngon ngu dich duoc liet ke, khong bao gio bo qua
  * du noi dung thuc te trung voi ngon ngu dich nao.
+ *
+ * De chiu duoc tai cao (nhieu nguoi chat cung luc), cac loi goi gan nhau (trong vong
+ * BATCH_WINDOW_MS) duoc GOP LAI thanh 1 request Gemini duy nhat thay vi moi tin nhan
+ * 1 request rieng - tang suc chiu tai ma khong can tang RPM_LIMIT.
  * @returns {Promise<Record<string, string>>}
  */
-async function translateForRelay(cleanText, sourceLangName, languages, apiKey) {
+function translateForRelay(cleanText, sourceLangName, languages, apiKey) {
   const cacheKey = `relay:${sourceLangName}::${languages.map((l) => l.code).sort().join(",")}::${cleanText}`;
   const cached = translationCache.get(cacheKey);
-  if (cached) return cached;
+  if (cached) return Promise.resolve(cached);
 
-  const body = {
-    system_instruction: { parts: [{ text: buildRelaySystemPrompt(sourceLangName, languages) }] },
-    contents: [{ role: "user", parts: [{ text: cleanText }] }],
-    generationConfig: {
-      temperature: 0.2,
-      responseMimeType: "application/json",
-      responseSchema: buildRelaySchema(languages),
-    },
-  };
+  return new Promise((resolve, reject) => {
+    pendingBatch.push({
+      id: nextBatchId++,
+      sourceLangName,
+      cleanText,
+      languages,
+      apiKey,
+      cacheKey,
+      resolve,
+      reject,
+    });
 
-  const raw = await rateLimiter.schedule(() => callGeminiRaw(body, apiKey));
-  const parsed = extractJson(raw);
-
-  translationCache.set(cacheKey, parsed);
-  return parsed;
+    if (pendingBatch.length >= MAX_BATCH_SIZE) {
+      if (batchTimer) {
+        clearTimeout(batchTimer);
+        batchTimer = null;
+      }
+      flushBatch();
+    } else {
+      scheduleFlush();
+    }
+  });
 }
 
 function getCacheStats() {
