@@ -1,4 +1,5 @@
 node_modules/
 .env
 data/config.json
+data/userPreferences.json
 npm-debug.log*

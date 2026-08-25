@@ -2,6 +2,8 @@
 
 Bot Discord tự động phát hiện ngôn ngữ và dịch tin nhắn sang các ngôn ngữ khác trong cộng đồng, dùng **Gemini API (Google AI Studio)** — có gói miễn phí, không cần thẻ billing. Phù hợp cho server có thành viên đến từ nhiều quốc gia.
 
+📄 Xem [tờ hướng dẫn sử dụng song ngữ Việt/Anh](docs/guide.html) (liệt kê đầy đủ các slash command cho thành viên và admin).
+
 ## Cách hoạt động
 
 - Mỗi tin nhắn văn bản trong kênh được bật tính năng dịch sẽ được:
@@ -68,6 +70,13 @@ Mặc định bot bật sẵn 5 ngôn ngữ: Tiếng Việt, English, 日本語,
 - `/translate-channel only` — thêm kênh hiện tại vào danh sách "chỉ dịch trong các kênh này" (khi danh sách này có ít nhất 1 kênh, bot chỉ hoạt động trong các kênh đó).
 - `/translate-channel reset` — xóa mọi giới hạn kênh, dịch ở mọi kênh.
 - `/translate-status` — xem cấu hình hiện tại, model/rate limit đang dùng, số bản dịch đang được cache.
+
+Mỗi thành viên (không cần quyền admin) cũng có thể tự quản lý ngôn ngữ cho tin nhắn của riêng mình:
+
+- `/mute-language toggle code:de` — bật/tắt mute một ngôn ngữ; khi đã mute, **tin nhắn của chính người đó** sẽ không còn được dịch sang ngôn ngữ đó nữa (không ảnh hưởng tin nhắn của người khác).
+- `/mute-language list` — xem các ngôn ngữ mình đang mute.
+
+Lưu ý: Discord không cho phép bot hiển thị nội dung khác nhau cho từng người xem trên cùng một tin nhắn công khai, nên "mute" ở đây chỉ áp dụng cho tin nhắn do chính người dùng đó gửi, không thể ẩn một ngôn ngữ chỉ với riêng người xem.
 
 Danh sách mã ngôn ngữ có tên/cờ hiển thị đẹp nằm ở [src/services/languageCatalog.js](src/services/languageCatalog.js) — có thể bổ sung thêm ngôn ngữ vào bảng `CATALOG` nếu cần. Mã không có trong bảng vẫn dịch được bình thường, chỉ là hiển thị tên thô và cờ mặc định 🏳️.
 

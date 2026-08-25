@@ -1,6 +1,7 @@
 const { EmbedBuilder } = require("discord.js");
 const logger = require("../logger");
 const configStore = require("../config/store");
+const userPreferences = require("../config/userPreferences");
 const gemini = require("../services/geminiTranslate");
 const { extractTranslatable, restorePlaceholders, isTranslatable } = require("../services/textSanitizer");
 const { describeLanguage } = require("../services/languageCatalog");
@@ -22,12 +23,16 @@ async function handleMessageCreate(message) {
     if (!configStore.isChannelEnabled(message.channel.id)) return;
     if (config.languages.length < 2) return;
 
+    const mutedByAuthor = new Set(userPreferences.getMutedLanguages(message.author.id));
+    const targetLanguages = config.languages.filter((lang) => !mutedByAuthor.has(lang.code));
+    if (targetLanguages.length === 0) return;
+
     const { cleanText, placeholders } = extractTranslatable(message.content);
     if (!isTranslatable(cleanText, config.minMessageLength)) return;
 
     let result;
     try {
-      result = await gemini.translateMessage(cleanText, config.languages, apiKey);
+      result = await gemini.translateMessage(cleanText, targetLanguages, apiKey);
     } catch (error) {
       logger.warn("Gemini dịch thất bại, bỏ qua tin nhắn này:", error.message || error);
       return;
