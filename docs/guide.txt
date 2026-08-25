@@ -1,0 +1,79 @@
+ZEN ASSISTANT — HƯỚNG DẪN SỬ DỤNG / USAGE GUIDE
+================================================
+
+Bot dịch tự động cho server, giúp thành viên từ nhiều quốc gia trò chuyện bằng ngôn ngữ của mình.
+Auto-translate bot for the server, so members from many countries can chat in their own language.
+
+
+CÁCH HOẠT ĐỘNG / HOW IT WORKS
+-----------------------------
+1. Nhắn tin bình thường bằng bất kỳ ngôn ngữ nào.
+   Type your message normally, in any language.
+
+2. Bot tự nhận diện ngôn ngữ gốc — không cần gõ lệnh.
+   The bot detects the source language automatically — no command needed.
+
+3. Bot trả lời (reply) ngay bên dưới với bản dịch sang các ngôn ngữ khác.
+   The bot replies underneath with translations into the other active languages.
+
+
+DÀNH CHO TẤT CẢ THÀNH VIÊN / FOR EVERYONE
+------------------------------------------
+/mute-language toggle code:<mã ngôn ngữ>
+   Bật/tắt: tin nhắn CỦA RIÊNG BẠN sẽ không dịch sang ngôn ngữ đó nữa. Ví dụ: code:de
+   Toggle a language off for YOUR OWN messages only. Example: code:de
+
+/mute-language list
+   Xem các ngôn ngữ bạn đang mute cho tin nhắn của mình.
+   See which languages you've muted for your own messages.
+
+/translate-status
+   Xem ngôn ngữ đang hoạt động, phạm vi kênh, model AI và số bản dịch đang cache.
+   View active languages, channel scope, AI model, and cached translation count.
+
+
+DÀNH CHO QUẢN TRỊ VIÊN (cần quyền Manage Server) / FOR ADMINS
+----------------------------------------------------------------
+/translate-languages set codes:<vi,en,ja,...>
+   Đặt lại toàn bộ danh sách ngôn ngữ của server.
+   Replace the server's entire language list.
+
+/translate-languages list
+   Xem danh sách ngôn ngữ hiện tại.
+   View the current language list.
+
+/translate-channel ignore
+   Bật/tắt loại trừ kênh hiện tại khỏi tự động dịch.
+   Toggle excluding the current channel from auto-translate.
+
+/translate-channel only
+   Bật/tắt: thêm kênh hiện tại vào danh sách "chỉ dịch ở đây".
+   Toggle adding the current channel to the "only translate here" list.
+
+/translate-channel reset
+   Xóa mọi giới hạn kênh — dịch trở lại ở mọi nơi.
+   Clear all channel restrictions — translate everywhere again.
+
+/translate-channel status
+   Xem kênh hiện tại có đang được dịch hay không.
+   Check whether the current channel is being translated.
+
+
+NGÔN NGỮ ĐANG HOẠT ĐỘNG / ACTIVE LANGUAGES
+---------------------------------------------
+🇻🇳 Tiếng Việt (vi)   🇬🇧 English (en)   🇯🇵 日本語 (ja)
+🇰🇷 한국어 (ko)        🇨🇳 中文 (zh-CN)    🇩🇪 Deutsch (de)
+
+
+MẸO / TIP
+---------
+Link, mention, emoji tùy chỉnh và code block luôn được giữ nguyên khi dịch. Bản dịch
+dùng AI (Gemini) nên khá sát ngữ cảnh — nếu thấy lệch nghĩa, cứ báo admin nhé.
+
+Links, mentions, custom emoji, and code blocks are always preserved when translating.
+Translations are AI-powered (Gemini) and context-aware — flag an admin if something
+reads off.
+
+
+--
+ZEN ASSISTANT · AUTO-TRANSLATE DESK · POWERED BY GEMINI AI

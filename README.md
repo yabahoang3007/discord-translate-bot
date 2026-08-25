@@ -2,7 +2,7 @@
 
 Bot Discord tự động phát hiện ngôn ngữ và dịch tin nhắn sang các ngôn ngữ khác trong cộng đồng, dùng **Gemini API (Google AI Studio)** — có gói miễn phí, không cần thẻ billing. Phù hợp cho server có thành viên đến từ nhiều quốc gia.
 
-📄 Xem [tờ hướng dẫn sử dụng song ngữ Việt/Anh](docs/guide.html) (liệt kê đầy đủ các slash command cho thành viên và admin).
+📄 Xem [tờ hướng dẫn sử dụng song ngữ Việt/Anh](docs/guide.txt) (liệt kê đầy đủ các slash command cho thành viên và admin).
 
 ## Cách hoạt động
 
