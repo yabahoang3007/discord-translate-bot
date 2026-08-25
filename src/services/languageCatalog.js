@@ -96,4 +96,35 @@ function channelSlugFor(code) {
   return CHANNEL_SLUGS[normalized] || normalized.toLowerCase().replace(/[^a-z0-9]+/g, "-");
 }
 
-module.exports = { CATALOG, describeLanguage, normalizeCode, channelSlugFor };
+// Nhan dau vao tu thanh vien (co the la ma "fr" hoac ten "French"/"Français") va suy ra
+// { code, name, flag }. Neu khong co trong CATALOG, tu tao 1 ma slug tu chinh ten do —
+// Gemini van dich duoc binh thuong voi ten ngon ngu bat ky, khong bat buoc phai co san trong bang.
+function resolveLanguageInput(input) {
+  const trimmed = (input || "").trim();
+  if (!trimmed) return null;
+  const lower = trimmed.toLowerCase();
+
+  const codeMatch = Object.keys(CATALOG).find((c) => c.toLowerCase() === lower);
+  if (codeMatch) return { code: codeMatch, name: CATALOG[codeMatch].name, flag: CATALOG[codeMatch].flag };
+
+  // Ten ban ngu (vd "Français", "Deutsch")
+  const nativeNameMatch = Object.entries(CATALOG).find(([, info]) => info.name.toLowerCase() === lower);
+  if (nativeNameMatch) return { code: nativeNameMatch[0], name: nativeNameMatch[1].name, flag: nativeNameMatch[1].flag };
+
+  // Ten tieng Anh thong dung (vd "French") - so voi CHANNEL_SLUGS vi day chinh la ten tieng Anh dang slug hoa
+  const normalizedInput = lower.replace(/[^a-z0-9]+/g, "");
+  const englishNameMatch = Object.entries(CHANNEL_SLUGS).find(
+    ([, slug]) => slug.replace(/-/g, "") === normalizedInput
+  );
+  if (englishNameMatch) {
+    const [code] = englishNameMatch;
+    const info = CATALOG[code];
+    return { code, name: info ? info.name : code, flag: info ? info.flag : "🏳️" };
+  }
+
+  const slug = lower.replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  if (!slug) return null;
+  return { code: slug, name: trimmed, flag: "🏳️" };
+}
+
+module.exports = { CATALOG, describeLanguage, normalizeCode, channelSlugFor, resolveLanguageInput };
