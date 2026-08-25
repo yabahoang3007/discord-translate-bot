@@ -1,0 +1,19 @@
+{
+  "name": "discord-translate-bot",
+  "version": "1.0.0",
+  "description": "Bot Discord tu dong dich tin nhan cho cong dong da quoc gia, dung Google Translate API",
+  "main": "src/index.js",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18.11.0"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js",
+    "deploy": "node src/deployCommands.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.27.0",
+    "dotenv": "^16.4.5"
+  }
+}
