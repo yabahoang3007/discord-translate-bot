@@ -1,7 +1,5 @@
 node_modules/
 .env
-data/config.json
 data/userPreferences.json
 data/memberList.json
-data/channelLanguages.json
 npm-debug.log*

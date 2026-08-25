@@ -122,6 +122,10 @@ Nhiều nền tảng PaaS yêu cầu ứng dụng lắng nghe 1 cổng HTTP đ�
 
 **Lưu ý khi điền biến môi trường trên các nền tảng có nút "AI tự sinh giá trị":** tuyệt đối không dùng tính năng đó cho `DISCORD_TOKEN`, `GEMINI_API_KEY`, `CLIENT_ID`, `GUILD_ID` — AI sẽ sinh ra chuỗi giả ngẫu nhiên (trông giống nhưng không phải giá trị thật), khiến bot lỗi `TokenInvalid` khi khởi động. Luôn dán đúng giá trị thật từ file `.env` cục bộ của bạn vào các ô này.
 
+**Quan trọng — ổ đĩa tạm thời (ephemeral) khi bật auto-deploy từ GitHub:** nhiều nền tảng (kể cả Vibe Hosting) build lại container từ đầu ở mỗi lần deploy, nghĩa là bất kỳ file nào không nằm trong Git sẽ **mất sạch** sau mỗi lần push code mới. Vì vậy:
+- `data/config.json` (danh sách ngôn ngữ) và `data/channelLanguages.json` (ánh xạ kênh↔ngôn ngữ) **được commit thẳng vào Git** làm baseline, để mỗi lần deploy lại vẫn giữ đúng cấu hình hiện tại thay vì reset về mặc định. Sau khi đổi ngôn ngữ/kênh bằng lệnh, nhớ chạy lại `git add data/config.json data/channelLanguages.json && git commit && git push` để "chốt" lại baseline mới — nếu không, lần deploy tiếp theo sẽ quay về đúng bản đã commit gần nhất.
+- `data/memberList.json` (danh sách tên đã đăng ký) và `data/userPreferences.json` (ngôn ngữ mỗi người đã mute) **không** được commit vì đây là dữ liệu người dùng thay đổi liên tục — nghĩa là chúng **sẽ bị xóa** mỗi khi có deploy mới. Nếu cần giữ vĩnh viễn, cân nhắc chuyển sang lưu trên 1 volume lưu trữ lâu dài (nếu nền tảng hỗ trợ) hoặc một database ngoài thay vì file JSON.
+
 ## 9. Lưu ý khi mở rộng quy mô (80+ thành viên, tiếp tục tăng)
 
 - Cấu hình được lưu trong `data/config.json` — nếu chạy nhiều instance bot cùng lúc (không khuyến khích), cần chuyển sang một DB thực sự (SQLite/Postgres) để tránh ghi đè lẫn nhau.
