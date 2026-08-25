@@ -16,6 +16,7 @@ const CATALOG = {
   ru: { name: "Русский", flag: "🇷🇺" },
   ar: { name: "العربية", flag: "🇸🇦" },
   hi: { name: "हिन्दी", flag: "🇮🇳" },
+  ta: { name: "தமிழ்", flag: "🇮🇳" },
   th: { name: "ภาษาไทย", flag: "🇹🇭" },
   id: { name: "Bahasa Indonesia", flag: "🇮🇩" },
   ms: { name: "Bahasa Melayu", flag: "🇲🇾" },

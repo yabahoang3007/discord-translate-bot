@@ -3,22 +3,16 @@ const path = require("path");
 
 const FILE_PATH = path.join(__dirname, "..", "..", "data", "userPreferences.json");
 
-let cache = null;
-
 function load() {
-  if (cache) return cache;
-
   if (!fs.existsSync(FILE_PATH)) {
     fs.mkdirSync(path.dirname(FILE_PATH), { recursive: true });
     fs.writeFileSync(FILE_PATH, "{}", "utf8");
   }
 
-  cache = JSON.parse(fs.readFileSync(FILE_PATH, "utf8"));
-  return cache;
+  return JSON.parse(fs.readFileSync(FILE_PATH, "utf8"));
 }
 
 function save(next) {
-  cache = next;
   const tmpPath = `${FILE_PATH}.tmp`;
   fs.writeFileSync(tmpPath, JSON.stringify(next, null, 2), "utf8");
   fs.renameSync(tmpPath, FILE_PATH);

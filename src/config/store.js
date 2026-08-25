@@ -5,11 +5,9 @@ const logger = require("../logger");
 const DEFAULT_CONFIG_PATH = path.join(__dirname, "..", "..", "config", "languages.default.json");
 const LIVE_CONFIG_PATH = path.join(__dirname, "..", "..", "data", "config.json");
 
-let cache = null;
-
+// Khong cache trong bo nho: luon doc thang tu file de tien trinh bot thay ngay
+// thay doi du config bi sua boi mot process khac (vd: script chinh sua thu cong).
 function load() {
-  if (cache) return cache;
-
   if (!fs.existsSync(LIVE_CONFIG_PATH)) {
     const defaults = fs.readFileSync(DEFAULT_CONFIG_PATH, "utf8");
     fs.mkdirSync(path.dirname(LIVE_CONFIG_PATH), { recursive: true });
@@ -17,12 +15,10 @@ function load() {
     logger.info("Đã tạo data/config.json từ cấu hình mặc định.");
   }
 
-  cache = JSON.parse(fs.readFileSync(LIVE_CONFIG_PATH, "utf8"));
-  return cache;
+  return JSON.parse(fs.readFileSync(LIVE_CONFIG_PATH, "utf8"));
 }
 
 function save(next) {
-  cache = next;
   const tmpPath = `${LIVE_CONFIG_PATH}.tmp`;
   fs.writeFileSync(tmpPath, JSON.stringify(next, null, 2), "utf8");
   fs.renameSync(tmpPath, LIVE_CONFIG_PATH);
