@@ -2,7 +2,7 @@ const logger = require("../logger");
 const TtlCache = require("./ttlCache");
 const { RateLimiter } = require("./rateLimiter");
 
-const MODEL = process.env.GEMINI_MODEL || "gemini-3.6-flash";
+const MODEL = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
 const MAX_RETRIES = 2;
 const RETRYABLE_STATUS = new Set([500, 502, 503, 504]); // KHONG retry 429: tra ve ngay de khong pha them quota mien phi
 

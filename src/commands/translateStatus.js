@@ -19,7 +19,7 @@ async function execute(interaction) {
     content: [
       `**Ngôn ngữ:** ${languages}`,
       `**Phạm vi kênh:** ${channelMode}`,
-      `**Model:** ${process.env.GEMINI_MODEL || "gemini-3.6-flash"} (giới hạn ${
+      `**Model:** ${process.env.GEMINI_MODEL || "gemini-3.5-flash-lite"} (giới hạn ${
         process.env.GEMINI_RPM_LIMIT || 10
       } request/phút)`,
       `**Cache:** ${cacheStats.translationCacheSize} bản dịch đã lưu`,

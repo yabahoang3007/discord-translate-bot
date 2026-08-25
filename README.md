@@ -46,7 +46,7 @@ DISCORD_TOKEN=token_bot_cua_ban
 CLIENT_ID=application_id_cua_bot
 GUILD_ID=id_server_de_dang_ky_lenh_nhanh   # có thể để trống
 GEMINI_API_KEY=api_key_gemini_cua_ban
-GEMINI_MODEL=gemini-2.0-flash              # doi neu Google doi ten model free tier
+GEMINI_MODEL=gemini-3.5-flash-lite          # doi neu Google doi ten model free tier
 GEMINI_RPM_LIMIT=10                        # chinh theo han muc free tier hien tai
 LOG_LEVEL=info
 ```
@@ -54,7 +54,7 @@ LOG_LEVEL=info
 ## 4. Đăng ký slash command và chạy bot
 
 ```bash
-npm run deploy   # đăng ký /translate-languages, /translate-channel, /translate-status
+npm run deploy   # đăng ký /translate-languages, /translate-channel, /translate-status, /mute-language, /member-list
 npm start        # chạy bot
 ```
 
@@ -82,7 +82,17 @@ Danh sách mã ngôn ngữ có tên/cờ hiển thị đẹp nằm ở [src/serv
 
 Lưu ý: càng nhiều ngôn ngữ đích, prompt gửi đi càng dài và phản hồi JSON càng lớn (mỗi ngôn ngữ là một field) — nên chỉ bật những ngôn ngữ thành viên thực sự dùng để tiết kiệm quota free tier.
 
-## 6. Lưu ý khi mở rộng quy mô (80+ thành viên, tiếp tục tăng)
+## 6. Danh sách thành viên (đăng ký qua `!name`)
+
+Bot có thể tổng hợp tên thành viên thành một danh sách tự cập nhật, dựa trên cú pháp thành viên tự gõ trong một kênh chỉ định:
+
+- Admin chạy `/member-list setchannel` tại kênh muốn dùng để đăng ký (ví dụ #general) — bot đăng ngay một tin nhắn danh sách rỗng và ghim lại (nếu có quyền Manage Messages).
+- Thành viên chỉ cần gõ `!Tên của họ` (không có dấu ngoặc, ví dụ: `!Nguyễn Văn A`) trong kênh đó — bot thả react ✅ xác nhận và tự cập nhật lại tin nhắn danh sách, không cần lệnh gì thêm.
+- Gõ lại `!` với tên mới sẽ **ghi đè** tên cũ của chính người đó (không tạo dòng trùng).
+- Tin nhắn dạng `!name` trong kênh này sẽ không bị bot dịch (được xử lý riêng, bỏ qua bước tự động dịch).
+- `/member-list reset` (admin) — xóa toàn bộ danh sách đã đăng ký để làm lại từ đầu.
+
+## 7. Lưu ý khi mở rộng quy mô (80+ thành viên, tiếp tục tăng)
 
 - Cấu hình được lưu trong `data/config.json` — nếu chạy nhiều instance bot cùng lúc (không khuyến khích), cần chuyển sang một DB thực sự (SQLite/Postgres) để tránh ghi đè lẫn nhau.
 - Gói miễn phí Gemini giới hạn theo request/phút **và** request/ngày. Khi cộng đồng đông lên, có thể chạm trần request/ngày trước cả trần/phút — theo dõi lỗi "Đã đạt giới hạn tốc độ/quota" trong log (đặt `LOG_LEVEL=debug` để xem chi tiết) để biết khi nào cần nâng cấp lên gói trả phí (pay-as-you-go) của Gemini API, thường rẻ hơn đáng kể so với Cloud Translation API cho cùng khối lượng.

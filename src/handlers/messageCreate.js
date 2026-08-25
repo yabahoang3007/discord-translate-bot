@@ -5,6 +5,7 @@ const userPreferences = require("../config/userPreferences");
 const gemini = require("../services/geminiTranslate");
 const { extractTranslatable, restorePlaceholders, isTranslatable } = require("../services/textSanitizer");
 const { describeLanguage } = require("../services/languageCatalog");
+const { tryHandleMemberRegistration } = require("./memberListHandler");
 
 const EMBED_COLOR = 0x5865f2;
 
@@ -15,6 +16,8 @@ function baseLang(code) {
 async function handleMessageCreate(message) {
   try {
     if (message.author.bot || message.webhookId || !message.guild) return;
+
+    if (await tryHandleMemberRegistration(message)) return;
 
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey) return;
