@@ -34,28 +34,36 @@ async function tryHandleChannelRelay(message) {
   const current = mappings.find((m) => m.channelId === message.channel.id);
   if (!current) return false;
 
-  const { cleanText, placeholders } = extractTranslatable(message.content);
-  const hasText = isTranslatable(cleanText);
+  const rawContent = message.content.trim();
+  const hasRawContent = rawContent.length > 0;
   const stickers = [...message.stickers.values()];
   const hasStickers = stickers.length > 0;
   const attachments = [...message.attachments.values()];
   const hasAttachments = attachments.length > 0;
 
-  if (!hasText && !hasStickers && !hasAttachments) return true;
+  if (!hasRawContent && !hasStickers && !hasAttachments) return true;
 
   const otherMappings = mappings.filter((m) => m.channelId !== message.channel.id);
   if (otherMappings.length === 0) return true;
 
-  let translations = {};
-  if (hasText) {
+  const { cleanText, placeholders } = extractTranslatable(message.content);
+  const shouldTranslate = hasRawContent && isTranslatable(cleanText);
+
+  // null = khong dich duoc (hoac khong can dich) -> gui nguyen van cho moi kenh thay vi bo qua.
+  let translatedByCode = null;
+  if (shouldTranslate) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (apiKey) {
       const sourceLangInfo = describeLanguage(current.code);
       const targetLanguages = otherMappings.map((m) => describeLanguage(m.code));
       try {
-        translations = await gemini.translateForRelay(cleanText, sourceLangInfo.name, targetLanguages, apiKey);
+        const translations = await gemini.translateForRelay(cleanText, sourceLangInfo.name, targetLanguages, apiKey);
+        translatedByCode = {};
+        for (const [code, text] of Object.entries(translations)) {
+          translatedByCode[code] = restorePlaceholders(text, placeholders);
+        }
       } catch (error) {
-        logger.warn("Đồng bộ kênh thất bại (lỗi dịch):", error.message || error);
+        logger.warn("Đồng bộ kênh thất bại (lỗi dịch), sẽ gửi nguyên văn thay thế:", error.message || error);
       }
     }
   }
@@ -65,8 +73,6 @@ async function tryHandleChannelRelay(message) {
   const attachmentFiles = attachments.map((a) => ({ attachment: a.url, name: a.name || "file" }));
   const mediaFiles = [...stickerFiles, ...attachmentFiles];
 
-  if (hasText && Object.keys(translations).length === 0 && mediaFiles.length === 0) return true;
-
   const displayName = message.member?.displayName || message.author.username;
   const avatarURL = message.author.displayAvatarURL();
   const client = message.client;
@@ -74,14 +80,14 @@ async function tryHandleChannelRelay(message) {
   const group = [{ channelId: message.channel.id, messageId: message.id }];
 
   for (const mapping of otherMappings) {
-    const text = translations?.[mapping.code];
+    const text = translatedByCode ? translatedByCode[mapping.code] : hasRawContent ? rawContent : undefined;
     if (!text && mediaFiles.length === 0) continue;
 
     try {
       const targetChannel = await client.channels.fetch(mapping.channelId);
       const webhook = await getOrCreateWebhook(targetChannel, client);
       const sent = await webhook.send({
-        content: text ? restorePlaceholders(text, placeholders) : undefined,
+        content: text || undefined,
         files: mediaFiles.length ? mediaFiles : undefined,
         username: displayName,
         avatarURL,
