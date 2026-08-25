@@ -109,6 +109,10 @@ Thay vì 1 kênh chung với bot reply kèm bản dịch, có thể chia mỗi n
 
 **Cách hoạt động:** thành viên nhắn trong kênh ngôn ngữ của họ (ví dụ #chat-ja) → bot dịch sang ngôn ngữ của từng kênh còn lại → đăng bản dịch vào từng kênh đó qua webhook mang đúng tên/avatar người gửi gốc. Các kênh đã ánh xạ **không còn dùng kiểu reply-kèm-embed** của mục Cách hoạt động ở trên nữa — đây là 2 chế độ tách biệt, một tin nhắn chỉ đi theo 1 trong 2 chế độ tùy kênh nó thuộc về.
 
+**Thành viên tự tạo kênh cho ngôn ngữ mới:** không cần đợi admin, ai cũng có thể chạy `/declare-language language:<mã hoặc tên>` (ví dụ `fr` hoặc `French`) để bot tự thêm ngôn ngữ đó và tạo kênh riêng, tự động tham gia hệ thống đồng bộ ngay. Nếu ngôn ngữ chưa có sẵn trong bảng tra cứu, bot vẫn tạo được kênh bình thường (dùng luôn tên người gõ), Gemini vẫn dịch tốt dù ngôn ngữ đó không được liệt kê sẵn.
+
+**Đồng bộ reaction:** khi ai đó thả emoji vào 1 bản tin nhắn (ở bất kỳ kênh nào trong nhóm đã đồng bộ), bot tự thả **cùng emoji đó** vào tất cả các bản sao còn lại (tin nhắn gốc + mọi kênh khác). Chỉ áp dụng cho tin nhắn được đồng bộ trong 24 giờ gần nhất (sau đó bộ nhớ liên kết tự dọn để tránh phình to theo thời gian).
+
 Lưu ý: `!name` (đăng ký danh sách thành viên) vẫn được kiểm tra trước, nên nếu #general vừa là kênh đăng ký tên vừa là kênh tiếng Anh, gõ `!Tên` vẫn hoạt động bình thường (không bị đồng bộ nhầm sang kênh khác).
 
 ## 8. Lưu ý khi mở rộng quy mô (80+ thành viên, tiếp tục tăng)

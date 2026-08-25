@@ -4,6 +4,7 @@ const gemini = require("../services/geminiTranslate");
 const { extractTranslatable, restorePlaceholders, isTranslatable } = require("../services/textSanitizer");
 const { describeLanguage } = require("../services/languageCatalog");
 const { getOrCreateWebhook } = require("../services/webhookRelay");
+const relayLinks = require("../services/relayLinks");
 
 // Tra ve true neu kenh nay la kenh-theo-ngon-ngu (da xu ly, bat ke thanh cong hay khong),
 // de messageCreate.js biet ma bo qua luong dich kieu reply-embed cu cho kenh nay.
@@ -36,6 +37,8 @@ async function tryHandleChannelRelay(message) {
   const avatarURL = message.author.displayAvatarURL();
   const client = message.client;
 
+  const group = [{ channelId: message.channel.id, messageId: message.id }];
+
   for (const mapping of otherMappings) {
     const text = translations?.[mapping.code];
     if (!text) continue;
@@ -43,15 +46,18 @@ async function tryHandleChannelRelay(message) {
     try {
       const targetChannel = await client.channels.fetch(mapping.channelId);
       const webhook = await getOrCreateWebhook(targetChannel, client);
-      await webhook.send({
+      const sent = await webhook.send({
         content: restorePlaceholders(text, placeholders),
         username: displayName,
         avatarURL,
       });
+      group.push({ channelId: mapping.channelId, messageId: sent.id });
     } catch (error) {
       logger.error(`Không gửi được tin nhắn đồng bộ sang kênh ${mapping.channelId}:`, error.message);
     }
   }
+
+  if (group.length > 1) relayLinks.registerGroup(group);
 
   return true;
 }
