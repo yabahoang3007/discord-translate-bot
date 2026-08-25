@@ -13,6 +13,15 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// Dung chung cho ca 2 prompt (che do 1 kenh va che do relay) de tang chat luong dich ma
+// khong doi model - tranh dich may moc tung chu, giu dung sac thai/tieng long/ten rieng.
+const TRANSLATION_QUALITY_GUIDE = [
+  "Xử lý tiếng lóng, viết tắt, ngôn ngữ mạng (internet speak/teencode) một cách tự nhiên — dịch đúng Ý NGHĨA THỰC SỰ và sắc thái cảm xúc (đùa cợt, mỉa mai, bực bội, phấn khích...), tuyệt đối không dịch máy móc từng chữ.",
+  "Tên riêng, tên nhân vật/nickname trong game, thuật ngữ chuyên ngành hoặc thuật ngữ riêng của cộng đồng: giữ nguyên không dịch nếu dịch ra sẽ làm mất nghĩa hoặc gây khó hiểu.",
+  "Giữ nguyên mọi emoji trong bản dịch, không dịch hay loại bỏ emoji.",
+  "Nếu câu có ẩn ý châm biếm, đùa giỡn, hoặc mỉa mai, phải truyền tải đúng tông giọng đó sang ngôn ngữ đích thay vì dịch nghiêm túc cứng nhắc.",
+].join("\n");
+
 function buildSystemPrompt(languages) {
   const list = languages.map((lang) => `${lang.code} (${lang.name})`).join(", ");
   return [
@@ -22,6 +31,7 @@ function buildSystemPrompt(languages) {
     "1. Xác định chính xác ngôn ngữ gốc (trả về mã ISO 639-1; dùng biến thể như zh-CN/zh-TW khi cần phân biệt).",
     "2. Dịch sang TỪNG ngôn ngữ đích ở trên, TRỪ ngôn ngữ trùng với ngôn ngữ gốc đã xác định (bỏ qua, không cần điền).",
     "3. Ưu tiên chính xác về thuật ngữ và đúng ngữ cảnh hơn là dịch từng từ theo nghĩa đen; giữ đúng giọng văn, sắc thái trang trọng/thân mật/hài hước của bản gốc.",
+    TRANSLATION_QUALITY_GUIDE,
     "4. Các chuỗi dạng ⟦P0⟧, ⟦P1⟧, ⟦P2⟧... là placeholder đại diện cho link, mention, emoji hoặc code — PHẢI giữ nguyên y hệt, không dịch, không thêm/bớt khoảng trắng quanh chúng, không đổi thứ tự hay số thứ tự.",
     "Chỉ trả lời đúng theo JSON schema đã cho, không thêm giải thích, không thêm markdown.",
   ].join("\n");
@@ -68,6 +78,7 @@ function buildBatchSystemPrompt(languages) {
     `Với MỖI tin nhắn, dịch "text" sang TẤT CẢ các ngôn ngữ sau, PHẢI điền đủ từng ngôn ngữ, không bỏ sót: ${list}.`,
     "Các tin nhắn hoàn toàn độc lập với nhau — tuyệt đối không trộn lẫn ngữ cảnh hay nội dung giữa các tin nhắn khác nhau khi dịch.",
     "Ưu tiên chính xác ngữ cảnh và thuật ngữ hơn là dịch từng từ theo nghĩa đen; giữ đúng giọng văn, sắc thái của từng bản gốc.",
+    TRANSLATION_QUALITY_GUIDE,
     "Các chuỗi dạng ⟦P0⟧, ⟦P1⟧... là placeholder — giữ nguyên y hệt, không dịch, không đổi thứ tự hay khoảng trắng quanh chúng.",
     "Trả về đúng theo JSON schema đã cho: một mảng kết quả, mỗi phần tử gồm đúng \"id\" tương ứng và \"translations\". Không thêm giải thích, không thêm markdown.",
   ].join("\n");
