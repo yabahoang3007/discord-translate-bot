@@ -116,6 +116,8 @@ Thay vì 1 kênh chung với bot reply kèm bản dịch, có thể chia mỗi n
 
 **Đồng bộ sticker:** khi ai đó gửi sticker (kèm chữ hoặc không), bot tải ảnh của sticker đó về và gửi lại dưới dạng **ảnh đính kèm** ở các kênh còn lại (giữ đúng tên/avatar người gửi). Đây là giới hạn từ phía Discord — webhook (cách bot dùng để giả làm người gửi) không được phép gửi sticker thật, chỉ có bot/tài khoản người dùng gửi trực tiếp mới làm được. Riêng sticker động cao cấp (định dạng Lottie) không chuyển được thành ảnh nên sẽ bị bỏ qua.
 
+**Đồng bộ ảnh/GIF/video đính kèm:** file người dùng tải lên trực tiếp (ảnh, GIF, video, hay bất kỳ file nào) cũng được đính kèm y hệt sang các kênh còn lại. Riêng GIF chọn từ khung GIF có sẵn của Discord (Tenor) không phải file đính kèm — bản chất chỉ là 1 link trong nội dung tin nhắn, nên đã tự động được giữ nguyên và đồng bộ như một link bình thường (Discord tự hiện preview ở mọi kênh).
+
 Lưu ý: `!name` (đăng ký danh sách thành viên) vẫn được kiểm tra trước, nên nếu #general vừa là kênh đăng ký tên vừa là kênh tiếng Anh, gõ `!Tên` vẫn hoạt động bình thường (không bị đồng bộ nhầm sang kênh khác).
 
 ## 8. Deploy lên nền tảng hosting (Railway/Render/Vibe Hosting...)

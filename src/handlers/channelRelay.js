@@ -38,8 +38,10 @@ async function tryHandleChannelRelay(message) {
   const hasText = isTranslatable(cleanText);
   const stickers = [...message.stickers.values()];
   const hasStickers = stickers.length > 0;
+  const attachments = [...message.attachments.values()];
+  const hasAttachments = attachments.length > 0;
 
-  if (!hasText && !hasStickers) return true;
+  if (!hasText && !hasStickers && !hasAttachments) return true;
 
   const otherMappings = mappings.filter((m) => m.channelId !== message.channel.id);
   if (otherMappings.length === 0) return true;
@@ -59,7 +61,11 @@ async function tryHandleChannelRelay(message) {
   }
 
   const stickerFiles = hasStickers ? await downloadStickerFiles(stickers) : [];
-  if (hasText && Object.keys(translations).length === 0 && stickerFiles.length === 0) return true;
+  // Anh/GIF/video dinh kem: dung thang URL cua Discord CDN, khong can tu tai ve.
+  const attachmentFiles = attachments.map((a) => ({ attachment: a.url, name: a.name || "file" }));
+  const mediaFiles = [...stickerFiles, ...attachmentFiles];
+
+  if (hasText && Object.keys(translations).length === 0 && mediaFiles.length === 0) return true;
 
   const displayName = message.member?.displayName || message.author.username;
   const avatarURL = message.author.displayAvatarURL();
@@ -69,14 +75,14 @@ async function tryHandleChannelRelay(message) {
 
   for (const mapping of otherMappings) {
     const text = translations?.[mapping.code];
-    if (!text && stickerFiles.length === 0) continue;
+    if (!text && mediaFiles.length === 0) continue;
 
     try {
       const targetChannel = await client.channels.fetch(mapping.channelId);
       const webhook = await getOrCreateWebhook(targetChannel, client);
       const sent = await webhook.send({
         content: text ? restorePlaceholders(text, placeholders) : undefined,
-        files: stickerFiles.length ? stickerFiles : undefined,
+        files: mediaFiles.length ? mediaFiles : undefined,
         username: displayName,
         avatarURL,
       });
