@@ -52,4 +52,48 @@ function normalizeCode(code) {
   return exact || code;
 }
 
-module.exports = { CATALOG, describeLanguage, normalizeCode };
+// Ten day du (khong viet tat) dung de dat ten kenh Discord, vd "chat-vietnamese".
+const CHANNEL_SLUGS = {
+  vi: "vietnamese",
+  en: "english",
+  ja: "japanese",
+  ko: "korean",
+  "zh-CN": "chinese",
+  "zh-TW": "chinese-traditional",
+  fr: "french",
+  de: "german",
+  es: "spanish",
+  pt: "portuguese",
+  "pt-BR": "portuguese-brazil",
+  ru: "russian",
+  ar: "arabic",
+  hi: "hindi",
+  ta: "tamil",
+  th: "thai",
+  id: "indonesian",
+  ms: "malay",
+  tl: "filipino",
+  it: "italian",
+  nl: "dutch",
+  pl: "polish",
+  tr: "turkish",
+  uk: "ukrainian",
+  sv: "swedish",
+  fi: "finnish",
+  no: "norwegian",
+  da: "danish",
+  cs: "czech",
+  el: "greek",
+  he: "hebrew",
+  bn: "bengali",
+  ur: "urdu",
+  fa: "persian",
+  sw: "swahili",
+};
+
+function channelSlugFor(code) {
+  const normalized = normalizeCode(code);
+  return CHANNEL_SLUGS[normalized] || normalized.toLowerCase().replace(/[^a-z0-9]+/g, "-");
+}
+
+module.exports = { CATALOG, describeLanguage, normalizeCode, channelSlugFor };

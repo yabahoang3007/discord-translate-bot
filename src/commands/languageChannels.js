@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, PermissionFlagsBits, ChannelType } = require("discord.js");
 const configStore = require("../config/store");
 const channelLanguages = require("../config/channelLanguages");
-const { describeLanguage } = require("../services/languageCatalog");
+const { describeLanguage, channelSlugFor } = require("../services/languageCatalog");
 
 const data = new SlashCommandBuilder()
   .setName("language-channels")
@@ -64,7 +64,7 @@ async function execute(interaction) {
         continue;
       }
 
-      const channelName = `chat-${lang.code.toLowerCase()}`;
+      const channelName = `chat-${channelSlugFor(lang.code)}`;
       let channel = guild.channels.cache.find((c) => c.name === channelName && c.type === ChannelType.GuildText);
 
       if (!channel) {
