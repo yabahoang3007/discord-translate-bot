@@ -11,7 +11,11 @@ const MAX_NAME_LENGTH = 80;
 // de messageCreate.js biet ma bo qua buoc dich cho tin nhan nay.
 async function tryHandleMemberRegistration(message) {
   const config = memberListStore.getConfig();
-  if (!config.channelId || config.channelId !== message.channel.id) return false;
+  // Cho phep dang ky o kenh duoc chi dinh (thuong la #general) LAN o moi kenh trong he
+  // thong dong bo da ngon ngu, vi danh sach gio da hien o tat ca cac kenh do.
+  const mappedChannelIds = channelLanguages.getMappings().map((m) => m.channelId);
+  const isRegistrationChannel = config.channelId === message.channel.id || mappedChannelIds.includes(message.channel.id);
+  if (!isRegistrationChannel) return false;
 
   const match = message.content.match(NAME_PATTERN);
   if (!match) return false;
