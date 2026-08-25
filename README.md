@@ -90,6 +90,8 @@ Bot có thể tổng hợp tên thành viên thành một danh sách tự cập 
 - Thành viên chỉ cần gõ `!Tên của họ` (không có dấu ngoặc, ví dụ: `!Nguyễn Văn A`) trong kênh đó — bot thả react ✅ xác nhận và tự cập nhật lại tin nhắn danh sách, không cần lệnh gì thêm.
 - Gõ lại `!` với tên mới sẽ **ghi đè** tên cũ của chính người đó (không tạo dòng trùng).
 - Tin nhắn dạng `!name` trong kênh này sẽ không bị bot dịch (được xử lý riêng, bỏ qua bước tự động dịch).
+- Bot cũng tự đổi **biệt danh (nickname)** của người đăng ký thành đúng tên họ gõ. Để việc này hoạt động, vào **Server Settings → Roles → (vai trò của bot)** và bật quyền **"Manage Nicknames"**, đồng thời kéo vai trò của bot lên **cao hơn** vai trò của các thành viên thường trong danh sách Roles (Discord không cho phép bot đổi biệt danh của ai có vai trò ngang/cao hơn mình, và không bao giờ đổi được biệt danh của chủ server). Nếu thiếu quyền, bot vẫn ghi nhận tên vào danh sách bình thường, chỉ là không đổi được nickname (lỗi này được ghi vào log, không làm gián đoạn tính năng khác).
+- Muốn bot tự ghim tin nhắn danh sách, bật thêm quyền **"Manage Messages"** cho vai trò của bot (không bắt buộc — thiếu quyền này thì danh sách vẫn cập nhật bình thường, chỉ là không được ghim).
 - `/member-list reset` (admin) — xóa toàn bộ danh sách đã đăng ký để làm lại từ đầu.
 
 ## 7. Lưu ý khi mở rộng quy mô (80+ thành viên, tiếp tục tăng)

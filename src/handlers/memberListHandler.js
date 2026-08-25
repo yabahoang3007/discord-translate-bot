@@ -21,6 +21,17 @@ async function tryHandleMemberRegistration(message) {
   const entries = memberListStore.upsertEntry(message.author.id, name);
   await message.react("✅").catch(() => {});
 
+  if (message.member) {
+    try {
+      await message.member.setNickname(name);
+    } catch (error) {
+      logger.warn(
+        `Không đổi được biệt danh cho ${message.author.tag} (thiếu quyền Manage Nicknames, hoặc họ có vai trò cao hơn bot, hoặc là chủ server):`,
+        error.message
+      );
+    }
+  }
+
   try {
     await updateMemberListMessage(message.channel, entries);
   } catch (error) {
