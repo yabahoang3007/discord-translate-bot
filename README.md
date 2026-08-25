@@ -94,6 +94,8 @@ Bot có thể tổng hợp tên thành viên thành một danh sách tự cập 
 - Bot cũng tự đổi **biệt danh (nickname)** của người đăng ký thành đúng tên họ gõ. Để việc này hoạt động, vào **Server Settings → Roles → (vai trò của bot)** và bật quyền **"Manage Nicknames"**, đồng thời kéo vai trò của bot lên **cao hơn** vai trò của các thành viên thường trong danh sách Roles (Discord không cho phép bot đổi biệt danh của ai có vai trò ngang/cao hơn mình, và không bao giờ đổi được biệt danh của chủ server). Nếu thiếu quyền, bot vẫn ghi nhận tên vào danh sách bình thường, chỉ là không đổi được nickname (lỗi này được ghi vào log, không làm gián đoạn tính năng khác).
 - Muốn bot tự ghim tin nhắn danh sách, bật thêm quyền **"Manage Messages"** cho vai trò của bot (không bắt buộc — thiếu quyền này thì danh sách vẫn cập nhật bình thường, chỉ là không được ghim).
 - `/member-list reset` (admin) — xóa toàn bộ danh sách đã đăng ký để làm lại từ đầu.
+- Tin nhắn danh sách được đăng và tự cập nhật ở **#general lẫn mọi kênh trong hệ thống đồng bộ đa ngôn ngữ** (mục 7) — ai ở kênh nào cũng xem được.
+- `/showlist` — bất kỳ ai cũng dùng được, hiện nhanh danh sách ngay trong chat (chỉ mình người gõ thấy) mà không cần tìm tin nhắn ghim.
 
 ## 7. Kênh riêng theo ngôn ngữ (đồng bộ tin nhắn đa kênh)
 
