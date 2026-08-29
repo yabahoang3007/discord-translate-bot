@@ -1,5 +1,6 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
 const configStore = require("../config/store");
+const { confirmDestructiveAction } = require("../services/confirmAction");
 
 const data = new SlashCommandBuilder()
   .setName("translate-channel")
@@ -39,8 +40,13 @@ async function execute(interaction) {
   }
 
   if (subcommand === "reset") {
+    const confirmed = await confirmDestructiveAction(interaction, {
+      prompt: "Bạn sắp xóa **mọi** giới hạn kênh dịch (cả danh sách 'ignore' lẫn 'only'). Sau đó bot sẽ dịch ở mọi kênh.",
+    });
+    if (!confirmed) return;
+
     configStore.resetChannelRules();
-    await interaction.reply({ content: "Đã xóa mọi giới hạn kênh. Bot sẽ dịch ở mọi kênh.", ephemeral: true });
+    await interaction.editReply({ content: "Đã xóa mọi giới hạn kênh. Bot sẽ dịch ở mọi kênh.", components: [] });
     return;
   }
 

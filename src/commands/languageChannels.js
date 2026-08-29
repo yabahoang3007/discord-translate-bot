@@ -2,6 +2,7 @@ const { SlashCommandBuilder, PermissionFlagsBits, ChannelType } = require("disco
 const configStore = require("../config/store");
 const channelLanguages = require("../config/channelLanguages");
 const { describeLanguage, channelSlugFor } = require("../services/languageCatalog");
+const { confirmDestructiveAction } = require("../services/confirmAction");
 
 const data = new SlashCommandBuilder()
   .setName("language-channels")
@@ -33,10 +34,16 @@ async function execute(interaction) {
   }
 
   if (subcommand === "reset") {
+    const confirmed = await confirmDestructiveAction(interaction, {
+      prompt:
+        "Bạn sắp xóa **toàn bộ** ánh xạ kênh ↔ ngôn ngữ. Các kênh Discord vẫn còn, nhưng bot sẽ ngừng đồng bộ tin nhắn giữa chúng.",
+    });
+    if (!confirmed) return;
+
     channelLanguages.reset();
-    await interaction.reply({
+    await interaction.editReply({
       content: "Đã xóa ánh xạ kênh-ngôn ngữ. Các kênh vẫn còn nguyên, chỉ là bot không còn đồng bộ tin nhắn giữa chúng nữa.",
-      ephemeral: true,
+      components: [],
     });
     return;
   }

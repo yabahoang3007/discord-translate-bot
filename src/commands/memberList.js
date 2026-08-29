@@ -1,6 +1,7 @@
 const { SlashCommandBuilder, PermissionFlagsBits } = require("discord.js");
 const memberListStore = require("../config/memberList");
 const { updateMemberListEverywhere } = require("../handlers/memberListHandler");
+const { confirmDestructiveAction } = require("../services/confirmAction");
 
 const data = new SlashCommandBuilder()
   .setName("member-list")
@@ -25,8 +26,16 @@ async function execute(interaction) {
   }
 
   if (subcommand === "reset") {
+    const confirmed = await confirmDestructiveAction(interaction, {
+      prompt: "Bạn sắp xóa **toàn bộ** danh sách thành viên đã đăng ký tên (và các tin nhắn danh sách đã ghim).",
+    });
+    if (!confirmed) return;
+
     memberListStore.reset();
-    await interaction.reply({ content: "Đã xóa toàn bộ danh sách thành viên đã đăng ký.", ephemeral: true });
+    await interaction.editReply({
+      content: "Đã xóa toàn bộ danh sách thành viên đã đăng ký.",
+      components: [],
+    });
   }
 }
 
