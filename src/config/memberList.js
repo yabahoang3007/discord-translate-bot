@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const { scheduleBackup } = require("../services/dataBackup");
 
 const FILE_PATH = path.join(__dirname, "..", "..", "data", "memberList.json");
 
@@ -20,6 +21,7 @@ function save(next) {
   const tmpPath = `${FILE_PATH}.tmp`;
   fs.writeFileSync(tmpPath, JSON.stringify(next, null, 2), "utf8");
   fs.renameSync(tmpPath, FILE_PATH);
+  scheduleBackup();
 }
 
 function getConfig() {

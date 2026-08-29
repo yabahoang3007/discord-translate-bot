@@ -5,6 +5,7 @@ const { handleMessageCreate } = require("./handlers/messageCreate");
 const { handleInteractionCreate } = require("./handlers/interactionCreate");
 const { handleReactionAdd } = require("./handlers/reactionRelay");
 const { startHealthServer } = require("./healthServer");
+const { AUTO_COMMIT_ENABLED } = require("./services/dataBackup");
 
 const { DISCORD_TOKEN, GEMINI_API_KEY } = process.env;
 
@@ -28,6 +29,11 @@ const client = new Client({
 
 client.once("ready", () => {
   logger.info(`Đăng nhập thành công với tên ${client.user.tag}`);
+  logger.info(
+    AUTO_COMMIT_ENABLED
+      ? "Tự động sao lưu data/*.json lên Git: BẬT"
+      : "Tự động sao lưu data/*.json lên Git: TẮT (đặt AUTO_COMMIT_DATA=true để bật)"
+  );
 });
 
 client.on("messageCreate", handleMessageCreate);

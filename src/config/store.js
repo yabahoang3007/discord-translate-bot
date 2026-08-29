@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const logger = require("../logger");
+const { scheduleBackup } = require("../services/dataBackup");
 
 const DEFAULT_CONFIG_PATH = path.join(__dirname, "..", "..", "config", "languages.default.json");
 const LIVE_CONFIG_PATH = path.join(__dirname, "..", "..", "data", "config.json");
@@ -22,6 +23,7 @@ function save(next) {
   const tmpPath = `${LIVE_CONFIG_PATH}.tmp`;
   fs.writeFileSync(tmpPath, JSON.stringify(next, null, 2), "utf8");
   fs.renameSync(tmpPath, LIVE_CONFIG_PATH);
+  scheduleBackup();
 }
 
 function getConfig() {
