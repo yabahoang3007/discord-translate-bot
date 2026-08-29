@@ -24,9 +24,10 @@ function getMappings() {
 
 function setMapping(channelId, code) {
   const config = load();
-  const existing = config.channels.find((c) => c.channelId === channelId);
-  if (existing) existing.code = code;
-  else config.channels.push({ channelId, code });
+  // 1 ngon ngu = dung 1 kenh: bo moi anh xa cu cua code nay (vd kenh bi xoa & tao lai,
+  // channelId doi) va moi anh xa cu cua chinh kenh nay sang code khac, roi them lai 1 dong sach.
+  config.channels = config.channels.filter((c) => c.channelId !== channelId && c.code !== code);
+  config.channels.push({ channelId, code });
   save(config);
 }
 

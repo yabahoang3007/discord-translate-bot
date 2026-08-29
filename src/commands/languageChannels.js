@@ -1,7 +1,7 @@
 const { SlashCommandBuilder, PermissionFlagsBits, ChannelType } = require("discord.js");
 const configStore = require("../config/store");
 const channelLanguages = require("../config/channelLanguages");
-const { describeLanguage, channelSlugFor } = require("../services/languageCatalog");
+const { describeLanguage, channelSlugFor, resolveLanguageInput } = require("../services/languageCatalog");
 const { confirmDestructiveAction } = require("../services/confirmAction");
 
 const data = new SlashCommandBuilder()
@@ -10,6 +10,14 @@ const data = new SlashCommandBuilder()
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild)
   .addSubcommand((sub) =>
     sub.setName("setup").setDescription("Tạo/ánh xạ kênh cho từng ngôn ngữ đang cấu hình (#general = tiếng Anh)")
+  )
+  .addSubcommand((sub) =>
+    sub
+      .setName("map")
+      .setDescription("Gán kênh HIỆN TẠI cho 1 ngôn ngữ (dùng khi kênh bị tạo lại/đổi tên, ID không còn khớp)")
+      .addStringOption((opt) =>
+        opt.setName("language").setDescription("Mã hoặc tên ngôn ngữ, vd: en, vi, Korean").setRequired(true)
+      )
   )
   .addSubcommand((sub) => sub.setName("list").setDescription("Xem ánh xạ kênh ↔ ngôn ngữ hiện tại"))
   .addSubcommand((sub) => sub.setName("reset").setDescription("Xóa ánh xạ (không xóa kênh đã tạo)"));
@@ -30,6 +38,25 @@ async function execute(interaction) {
       })
       .join("\n");
     await interaction.reply({ content: text, ephemeral: true });
+    return;
+  }
+
+  if (subcommand === "map") {
+    const input = interaction.options.getString("language", true);
+    const info = resolveLanguageInput(input);
+    if (!info) {
+      await interaction.reply({
+        content: "Không nhận diện được ngôn ngữ. Thử mã (vd: `en`, `vi`) hoặc tên tiếng Anh (vd: `Korean`).",
+        ephemeral: true,
+      });
+      return;
+    }
+
+    channelLanguages.setMapping(interaction.channelId, info.code);
+    await interaction.reply({
+      content: `Đã gán kênh này → ${info.flag} ${info.name} (${info.code}). Tin nhắn ở đây sẽ đồng bộ/dịch qua lại với các kênh ngôn ngữ khác.`,
+      ephemeral: true,
+    });
     return;
   }
 
@@ -54,20 +81,26 @@ async function execute(interaction) {
     const guild = interaction.guild;
     const languages = configStore.getLanguages();
 
-    const generalChannel = guild.channels.cache.find(
-      (c) => c.name === "general" && c.type === ChannelType.GuildText
-    );
-    if (!generalChannel) {
-      await interaction.editReply("Không tìm thấy kênh #general trong server — cần có kênh này để làm kênh tiếng Anh.");
-      return;
-    }
+    // Kenh tieng Anh: uu tien #general (quy uoc cu), roi #chat-english, roi kenh dang duoc
+    // map "en" san. Neu deu khong co -> bo qua "en" trong vong lap, nhac dung /language-channels map.
+    const enMappedId = channelLanguages.getMappings().find((m) => m.code === "en")?.channelId;
+    const englishChannel =
+      guild.channels.cache.find((c) => c.name === "general" && c.type === ChannelType.GuildText) ||
+      guild.channels.cache.find((c) => c.name === "chat-english" && c.type === ChannelType.GuildText) ||
+      (enMappedId && guild.channels.cache.get(enMappedId));
 
     const summary = [];
 
     for (const lang of languages) {
       if (lang.code === "en") {
-        channelLanguages.setMapping(generalChannel.id, "en");
-        summary.push(`${lang.flag} ${lang.name} → #${generalChannel.name} (đã có sẵn)`);
+        if (englishChannel) {
+          channelLanguages.setMapping(englishChannel.id, "en");
+          summary.push(`${lang.flag} ${lang.name} → #${englishChannel.name} (đã có sẵn)`);
+        } else {
+          summary.push(
+            `${lang.flag} ${lang.name} → BỎ QUA: không thấy #general hay #chat-english. Vào kênh tiếng Anh gõ \`/language-channels map language:en\`.`
+          );
+        }
         continue;
       }
 
