@@ -4,7 +4,12 @@ const { RateLimiter } = require("./rateLimiter");
 
 const MODEL = process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
 const MAX_RETRIES = 2;
-const RETRYABLE_STATUS = new Set([500, 502, 503, 504]); // KHONG retry 429: tra ve ngay de khong pha them quota mien phi
+const RETRYABLE_STATUS = new Set([500, 502, 503, 504]);
+// 429 theo PHUT (RPM/TPM) se tu het sau vai chuc giay -> dang cho + thu lai 1 lan.
+// 429 theo NGAY (RPD) thi cho vo ich -> bo ngay. Cho toi da bao nhieu lau moi coi la
+// "khong dang cho nua" (vuot nguong nay -> nem loi, relay se gui nguyen van).
+const MAX_429_RETRIES = 1;
+const MAX_429_WAIT_MS = 65_000;
 
 const translationCache = new TtlCache(60 * 60 * 1000); // 1 gio
 const rateLimiter = new RateLimiter(Number(process.env.GEMINI_RPM_LIMIT) || 15);
@@ -157,12 +162,39 @@ async function flushBatch() {
   }
 }
 
+// 429 do quota theo NGAY (RPD): cho bao lau cung khong het truoc nua dem UTC -> khong retry.
+function isDailyQuota(errorBody) {
+  return /per\s*-?\s*day|PerDay|RequestsPerDay|per_day/i.test(errorBody || "");
+}
+
+// Lay khoang cho Gemini goi y: header Retry-After (giay) hoac RetryInfo.retryDelay ("39s") trong body.
+function parseRetryDelayMs(response, errorBody) {
+  const header = response.headers.get("retry-after");
+  if (header) {
+    const secs = Number(header);
+    if (Number.isFinite(secs)) return secs * 1000;
+    const dateMs = Date.parse(header);
+    if (!Number.isNaN(dateMs)) return Math.max(0, dateMs - Date.now());
+  }
+  try {
+    const details = JSON.parse(errorBody)?.error?.details || [];
+    for (const detail of details) {
+      const match = typeof detail.retryDelay === "string" && detail.retryDelay.match(/^([\d.]+)s$/);
+      if (match) return Math.ceil(Number(match[1]) * 1000);
+    }
+  } catch {
+    // body khong phai JSON -> khong co goi y, dung backoff mac dinh
+  }
+  return null;
+}
+
 async function callGeminiRaw(body, apiKey) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${encodeURIComponent(
     apiKey
   )}`;
 
   let lastError;
+  let retries429 = 0;
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt += 1) {
     let response;
     try {
@@ -179,7 +211,19 @@ async function callGeminiRaw(body, apiKey) {
 
     if (response.status === 429) {
       const errorBody = await response.text().catch(() => "");
-      throw new Error(`Đã đạt giới hạn tốc độ/quota miễn phí của Gemini API: ${errorBody}`);
+      lastError = new Error(`Đã đạt giới hạn tốc độ/quota Gemini API: ${errorBody}`);
+
+      const suggestedWait = parseRetryDelayMs(response, errorBody);
+      const waitMs = suggestedWait ?? 2 ** retries429 * 3000; // mac dinh 3s, 6s
+      if (isDailyQuota(errorBody) || retries429 >= MAX_429_RETRIES || waitMs > MAX_429_WAIT_MS) {
+        throw lastError;
+      }
+
+      retries429 += 1;
+      attempt -= 1; // 429 dang cho khong tinh vao han muc retry loi 5xx
+      logger.warn(`Gemini 429, chờ ${Math.round(waitMs / 1000)}s rồi thử lại (lần ${retries429}/${MAX_429_RETRIES})`);
+      await sleep(waitMs);
+      continue;
     }
 
     if (response.ok) {

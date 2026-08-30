@@ -92,6 +92,13 @@ async function tryHandleChannelRelay(message) {
   const { cleanText, placeholders } = extractTranslatable(message.content);
   const shouldTranslate = hasRawContent && isTranslatable(cleanText);
 
+  logger.info(
+    `[relay] kênh ${current.code} (${message.channel.id}) -> ${otherMappings.length} kênh khác | ` +
+      `shouldTranslate=${shouldTranslate} hasApiKey=${Boolean(process.env.GEMINI_API_KEY)} cleanText=${JSON.stringify(
+        cleanText.slice(0, 80)
+      )}`
+  );
+
   // null = khong dich duoc (hoac khong can dich) -> gui nguyen van cho moi kenh thay vi bo qua.
   let translatedByCode = null;
   if (shouldTranslate) {
@@ -108,9 +115,12 @@ async function tryHandleChannelRelay(message) {
         for (const [code, text] of Object.entries(translations)) {
           translatedByCode[code] = restorePlaceholders(text, placeholders);
         }
+        logger.info(`[relay] dịch OK, mã ngôn ngữ nhận được: ${Object.keys(translatedByCode).join(", ")}`);
       } catch (error) {
-        logger.warn("Đồng bộ kênh thất bại (lỗi dịch), sẽ gửi nguyên văn thay thế:", error.message || error);
+        logger.warn("[relay] Đồng bộ kênh thất bại (lỗi dịch), sẽ gửi nguyên văn thay thế:", error.message || error);
       }
+    } else {
+      logger.warn("[relay] THIẾU GEMINI_API_KEY trong môi trường -> gửi nguyên văn, không dịch.");
     }
   }
 
