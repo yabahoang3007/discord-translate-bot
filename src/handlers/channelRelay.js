@@ -99,8 +99,12 @@ async function tryHandleChannelRelay(message) {
       )}`
   );
 
-  // null = khong dich duoc (hoac khong can dich) -> gui nguyen van cho moi kenh thay vi bo qua.
+  // translatedByCode == null co 2 truong hop rat khac nhau:
+  //  - translationFailed = false: noi dung KHONG can dich (so, emoji, ky tu dac biet) -> gui as-is la dung.
+  //  - translationFailed = true : da co gang dich nhung LOI (429, het quota, mat mang...) -> KHONG duoc
+  //    do nguyen van ngon ngu goc vao cac kenh ban dia (gay "song ngu"); tha thieu tin con hon.
   let translatedByCode = null;
+  let translationFailed = false;
   if (shouldTranslate) {
     const apiKey = process.env.GEMINI_API_KEY;
     if (apiKey) {
@@ -117,10 +121,12 @@ async function tryHandleChannelRelay(message) {
         }
         logger.info(`[relay] dịch OK, mã ngôn ngữ nhận được: ${Object.keys(translatedByCode).join(", ")}`);
       } catch (error) {
-        logger.warn("[relay] Đồng bộ kênh thất bại (lỗi dịch), sẽ gửi nguyên văn thay thế:", error.message || error);
+        translationFailed = true;
+        logger.warn("[relay] Đồng bộ kênh thất bại (lỗi dịch), BỎ QUA text cho kênh bản địa:", error.message || error);
       }
     } else {
-      logger.warn("[relay] THIẾU GEMINI_API_KEY trong môi trường -> gửi nguyên văn, không dịch.");
+      translationFailed = true;
+      logger.warn("[relay] THIẾU GEMINI_API_KEY trong môi trường -> bỏ qua text cho kênh bản địa.");
     }
   }
 
@@ -140,7 +146,15 @@ async function tryHandleChannelRelay(message) {
   // moi kenh ~200-500ms se cong don thanh vai giay tre khong can thiet.
   const sendResults = await Promise.allSettled(
     otherMappings.map(async (mapping) => {
-      const text = translatedByCode ? translatedByCode[mapping.code] : hasRawContent ? rawContent : undefined;
+      // - Dich thanh cong: dung ban dich cua dung ngon ngu kenh.
+      // - Dich LOI (translationFailed): KHONG gui text (tha thieu con hon do ngoai ngu goc vao kenh ban dia);
+      //   media/sticker van gui binh thuong vi chung khong co ngon ngu.
+      // - Khong can dich (so, emoji...): gui as-is.
+      let text;
+      if (translatedByCode) text = translatedByCode[mapping.code];
+      else if (translationFailed) text = undefined;
+      else text = hasRawContent ? rawContent : undefined;
+
       if (!text && mediaFiles.length === 0) return null;
 
       const replyPrefix = await buildReplyPrefix(replyContext, mapping.channelId, client);
