@@ -43,5 +43,8 @@
   ],
   "ignoredChannels": [],
   "onlyChannels": [],
-  "minMessageLength": 2
+  "minMessageLength": 2,
+  "announcementChannels": [
+    "1559446628497235978"
+  ]
 }
