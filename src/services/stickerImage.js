@@ -1,4 +1,3 @@
-const { Jimp } = require("jimp");
 
 const MAX_DIMENSION = 320;
 const MAX_BYTES = 512 * 1024;
@@ -7,6 +6,8 @@ const MIN_DIMENSION = 64;
 // Discord yeu cau sticker tinh la PNG, toi da 320x320, toi da 512KB.
 // Cover ve dung 320x320 truoc, neu van qua nang thi giam dan kich thuoc.
 async function prepareStickerImage(buffer) {
+  // Nap jimp khi can thay vi luc khoi dong de tiet kiem RAM tren host nho.
+  const { Jimp } = require("jimp");
   let size = MAX_DIMENSION;
 
   while (size >= MIN_DIMENSION) {

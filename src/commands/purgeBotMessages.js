@@ -3,7 +3,7 @@ const logger = require("../logger");
 const { confirmDestructiveAction } = require("../services/confirmAction");
 
 const DEFAULT_SCAN_LIMIT = 2000;
-const MAX_SCAN_LIMIT = 10000;
+const MAX_SCAN_LIMIT = 5000;
 // bulkDelete chi xoa duoc tin nhan < 14 ngay tuoi; chua 1 gio du phong cho lech dong ho.
 const BULK_DELETE_MAX_AGE_MS = 14 * 24 * 60 * 60 * 1000 - 60 * 60 * 1000;
 
@@ -32,7 +32,7 @@ async function fetchHistory(channel, limit) {
   const result = [];
   let before;
   while (result.length < limit) {
-    const batch = await channel.messages.fetch({ limit: Math.min(100, limit - result.length), before });
+    const batch = await channel.messages.fetch({ limit: Math.min(100, limit - result.length), before, cache: false });
     if (batch.size === 0) break;
     result.push(...batch.values());
     before = batch.last().id;
