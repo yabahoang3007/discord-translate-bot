@@ -55,7 +55,7 @@ PORT=3000                                  # chi dung khi deploy len nen tang ye
 ## 4. Đăng ký slash command và chạy bot
 
 ```bash
-npm run deploy   # đăng ký /translate-languages, /translate-channel, /translate-status, /mute-language, /member-list
+npm run deploy   # đăng ký /translate-languages, /translate-channel, /translate-status, /mute-language, /member-list, /purge-bot-messages
 npm start        # chạy bot
 ```
 
@@ -123,6 +123,19 @@ Thay vì 1 kênh chung với bot reply kèm bản dịch, có thể chia mỗi n
 **Đồng bộ trả lời (reply):** khi ai đó dùng tính năng "Reply" của Discord để trả lời 1 tin nhắn, các kênh còn lại sẽ hiện thêm 1 dòng trích dẫn phía trên nội dung, dạng `> 💬 Tên người gửi: <đoạn trích tin nhắn được trả lời>`. Nếu tin nhắn được trả lời đó cũng từng được đồng bộ trước đó, đoạn trích sẽ lấy đúng **bản đã dịch sang ngôn ngữ của từng kênh** thay vì hiện nguyên văn ngoại ngữ gốc. Đây cũng là giới hạn từ Discord — webhook không thể tạo reply thật (liên kết nhảy đến tin nhắn gốc) như tin nhắn thường.
 
 Lưu ý: `!name` (đăng ký danh sách thành viên) vẫn được kiểm tra trước, nên nếu #general vừa là kênh đăng ký tên vừa là kênh tiếng Anh, gõ `!Tên` vẫn hoạt động bình thường (không bị đồng bộ nhầm sang kênh khác).
+
+## 7b. Kênh thông báo cho bot game (vd Top Heroes)
+
+Bình thường bot bỏ qua mọi tin nhắn của bot/webhook khác. Muốn dịch thông báo của một bot game:
+
+1. Tạo kênh riêng (vd `#top-heroes-news`), rồi đổi nơi bot Top Heroes đăng tin sang kênh đó **trong Discord** (bot dịch không điều khiển được bot khác):
+   - Nếu là kênh được *Follow* từ server chính thức: **Server Settings → Integrations → (Channels Followed)** → xóa follow cũ ở #general, rồi bấm *Follow* lại và chọn kênh mới.
+   - Nếu là bot thật: đổi kênh trong lệnh cấu hình/dashboard của chính bot đó.
+2. Trong kênh mới, chạy `/translate-channel announcement` — tin nhắn (kể cả embed) của bot/webhook khác trong kênh này sẽ được dịch sang mọi ngôn ngữ đang cấu hình, đăng thành reply ngay dưới thông báo. Tin nhắn của người thật trong kênh này không bị dịch.
+3. Dọn tin cũ ở #general: vào #general chạy `/purge-bot-messages` (cần quyền **Manage Messages**):
+   - Bỏ trống tham số → bot liệt kê các bot/webhook đã nhắn trong kênh kèm số tin và `author_id`.
+   - `/purge-bot-messages bot:@TopHeroes` hoặc `author_id:<id>` → bot hỏi xác nhận rồi xóa. Chỉ xóa tin của bot/webhook, không bao giờ xóa tin của thành viên. `scan_limit` (mặc định 2000, tối đa 10000) là số tin gần nhất được quét.
+   - Bot cần quyền **Manage Messages** + **Read Message History** ở kênh đó. Tin cũ hơn 14 ngày phải xóa từng cái nên sẽ chậm hơn.
 
 ## 8. Deploy lên nền tảng hosting (Railway/Render/Vibe Hosting...)
 

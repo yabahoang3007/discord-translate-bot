@@ -8,6 +8,7 @@ const declareLanguage = require("./declareLanguage");
 const createSticker = require("./createSticker");
 const remindSetup = require("./remindSetup");
 const showList = require("./showList");
+const purgeBotMessages = require("./purgeBotMessages");
 
 const commands = [
   translateLanguages,
@@ -20,6 +21,7 @@ const commands = [
   createSticker,
   remindSetup,
   showList,
+  purgeBotMessages,
 ];
 
 module.exports = { commands };

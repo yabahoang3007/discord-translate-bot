@@ -7,6 +7,7 @@ const { extractTranslatable, restorePlaceholders, isTranslatable } = require("..
 const { describeLanguage } = require("../services/languageCatalog");
 const { tryHandleMemberRegistration } = require("./memberListHandler");
 const { tryHandleChannelRelay } = require("./channelRelay");
+const { tryHandleAnnouncement } = require("./announcementTranslate");
 
 const EMBED_COLOR = 0x5865f2;
 
@@ -16,7 +17,9 @@ function baseLang(code) {
 
 async function handleMessageCreate(message) {
   try {
-    if (message.author.bot || message.webhookId || !message.guild) return;
+    if (!message.guild || message.author.id === message.client.user.id) return;
+    if (await tryHandleAnnouncement(message)) return;
+    if (message.author.bot || message.webhookId) return;
 
     if (await tryHandleMemberRegistration(message)) return;
     if (await tryHandleChannelRelay(message)) return;

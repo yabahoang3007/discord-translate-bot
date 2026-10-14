@@ -65,6 +65,23 @@ function toggleOnlyChannel(channelId) {
   return config.onlyChannels.includes(channelId);
 }
 
+// Kenh thong bao: tin nhan cua BOT/webhook khac (vd Top Heroes) trong cac kenh nay se duoc
+// dich, bat ke rule ignore/only (cac kenh thuong van bo qua tin nhan cua bot).
+function getAnnouncementChannels() {
+  return load().announcementChannels || [];
+}
+
+function toggleAnnouncementChannel(channelId) {
+  const config = load();
+  const list = config.announcementChannels || [];
+  const idx = list.indexOf(channelId);
+  if (idx >= 0) list.splice(idx, 1);
+  else list.push(channelId);
+  config.announcementChannels = list;
+  save(config);
+  return list.includes(channelId);
+}
+
 function resetChannelRules() {
   const config = load();
   config.ignoredChannels = [];
@@ -80,4 +97,6 @@ module.exports = {
   toggleIgnoredChannel,
   toggleOnlyChannel,
   resetChannelRules,
+  getAnnouncementChannels,
+  toggleAnnouncementChannel,
 };
