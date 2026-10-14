@@ -131,7 +131,7 @@ Bình thường bot bỏ qua mọi tin nhắn của bot/webhook khác. Muốn d�
 1. Tạo kênh riêng (vd `#top-heroes-news`), rồi đổi nơi bot Top Heroes đăng tin sang kênh đó **trong Discord** (bot dịch không điều khiển được bot khác):
    - Nếu là kênh được *Follow* từ server chính thức: **Server Settings → Integrations → (Channels Followed)** → xóa follow cũ ở #general, rồi bấm *Follow* lại và chọn kênh mới.
    - Nếu là bot thật: đổi kênh trong lệnh cấu hình/dashboard của chính bot đó.
-2. Trong kênh mới, chạy `/translate-channel announcement` — tin nhắn (kể cả embed) của bot/webhook khác trong kênh này sẽ được dịch sang mọi ngôn ngữ đang cấu hình, đăng thành reply ngay dưới thông báo. Tin nhắn của người thật trong kênh này không bị dịch.
+2. Trong kênh mới, chạy `/translate-channel announcement` — mỗi thông báo (kể cả embed) của bot/webhook khác trong kênh này sẽ được dịch và gửi tới **từng kênh theo ngôn ngữ** (mục 7: `#chat-vietnamese` nhận bản tiếng Việt...), kèm link về tin gốc. Kênh trùng ngôn ngữ gốc (vd thông báo tiếng Anh → kênh `en`/#general) được bỏ qua; ngôn ngữ nào dịch lỗi thì kênh đó không nhận gì. Nếu server chưa có kênh theo ngôn ngữ thì bot không dịch. Tin nhắn của người thật trong kênh thông báo không bị dịch.
 3. Dọn tin cũ ở #general: vào #general chạy `/purge-bot-messages` (cần quyền **Manage Messages**):
    - Bỏ trống tham số → bot liệt kê các bot/webhook đã nhắn trong kênh kèm số tin và `author_id`.
    - `/purge-bot-messages bot:@TopHeroes` hoặc `author_id:<id>` → bot hỏi xác nhận rồi xóa. Chỉ xóa tin của bot/webhook, không bao giờ xóa tin của thành viên. `scan_limit` (mặc định 2000, tối đa 5000) là số tin gần nhất được quét.
